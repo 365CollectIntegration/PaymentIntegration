@@ -3,7 +3,7 @@ name: Azure Node.js App Service Deploy
 on:
   push:
     branches:
-      - master  # Trigger deployment on push to the main branch (you can adjust this to your preferred branch)
+      - main  # Trigger deployment on push to the main branch (you can adjust this to your preferred branch)
   workflow_dispatch:  # Allow manual trigger of deployment
   
 jobs:
