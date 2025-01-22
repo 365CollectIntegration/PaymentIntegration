@@ -7,8 +7,6 @@ import axios from "axios";
 
 import { Button } from "@/components/Button";
 import { Field, FieldsContainer, FormTitle } from "@/components/Field";
-// import { gpAxios } from "@/utils/apiUtils";
-import { makeid } from "@/helpers/stringGenerator";
 import { convertDate } from "@/helpers/convertDate";
 import { frequencyCodeValue } from "@/helpers/frequencyCodeValue";
 import { AgreementDataProps } from "@/types/agreements";
@@ -21,85 +19,65 @@ function HomePage() {
   const [agreementData, setAgreementData] = useState<AgreementDataProps>();
   const [customerDetails, setCustomerDetails] =
     useState<CustomerDetailsProps>();
+  const [contactId, setContactId] = useState<string>();
 
   async function handleClick() {
+    const accessToken = localStorage.getItem("accessToken");
     setIsLoading(true);
-    // try {
-    //   const res = await gpAxios.post(
-    //     "/customers",
-    //     {
-    //       name: "Sample Customer",
-    //       email: "sample.customer@example.com",
-    //       reference: makeid(6),
-    //     },
-    //     {
-    //       headers: {
-    //         Accept: "application/json, text/plain",
-    //         "Content-Type": "application/json",
-    //         "x-api-key":
-    //           "zzOIzbv-AlAbxp8.USNoE128vssg6sH4e6uUtUll1khphUhtdtdM1zaL9Kg",
-    //         "x-idempotency-key": uuid(),
-    //       },
-    //     }
-    //   );
-
-    //   localStorage.setItem("customerId", res.data.id);
-    //   router.push(`/pay-to?reference=${searchParams.get("reference")}`);
-    // } catch (error) {
-    //   console.error(error);
-    // } finally {
-    //   setIsLoading(false);
-    // }
-    axios({
-      method: "POST",
-      url: `https://sandbox.api.gpaunz.com/customers`,
-      headers: {
-        Accept: "application/json, text/plain",
-        "Content-Type": "application/json",
-        "x-api-key":
-          "zzOIzbv-AlAbxp8.USNoE128vssg6sH4e6uUtUll1khphUhtdtdM1zaL9Kg",
-        "x-idempotency-key": uuid(),
-      },
-      data: {
-        name: customerDetails?.fullname,
-        email: customerDetails?.emailaddress1,
-        reference: makeid(6),
-      },
-    })
-      .then((res) => {
-        setIsLoading(false);
-        localStorage.setItem("customerId", res.data.id);
-        router.push(`/pay-to?reference=${searchParams.get("reference")}`);
+    if (customerDetails?.mec_gpcustomeruniqueid) {
+      router.push(`/pay-to?reference=${searchParams.get("reference")}`);
+    } else {
+      axios({
+        method: "POST",
+        url: `https://sandbox.api.gpaunz.com/customers`,
+        headers: {
+          Accept: "application/json, text/plain",
+          "Content-Type": "application/json",
+          "x-api-key":
+            "zzOIzbv-AlAbxp8.USNoE128vssg6sH4e6uUtUll1khphUhtdtdM1zaL9Kg",
+          "x-idempotency-key": uuid(),
+        },
+        data: {
+          name: customerDetails?.fullname,
+          email: customerDetails?.emailaddress1,
+          reference: customerDetails?.mec_customerreferenceid,
+        },
       })
-      .catch(() => {
-        setIsLoading(false);
-      });
+        .then((res) => {
+          addGPCustomerUniqueId(accessToken, res.data.id);
+        })
+        .catch(() => {
+          setIsLoading(false);
+        });
+    }
   }
 
-  async function addGPCustomerUniqueId(token: string, contactId: string) {
+  async function addGPCustomerUniqueId(
+    token: string | null,
+    gpUniqueId: string
+  ) {
     try {
       const res = await axios.post("/api/add-customer-id", {
         token,
         contactId,
-        gpUniqueId: `gp-${makeid(6)}`,
+        gpUniqueId: gpUniqueId,
       });
-      console.log("RES: ", res);
-      getCustomerDetails(token, contactId);
+      if (res.data === "") {
+        setIsLoading(false);
+        router.push(`/pay-to?reference=${searchParams.get("reference")}`);
+      }
     } catch (error) {
       console.error(error);
     }
   }
 
-  async function getCustomerDetails(token: string, contactId: string) {
+  async function getCustomerDetails(token: string, contactIdValue: string) {
     try {
       const res = await axios.post("/api/customer-details", {
         token,
-        contactId,
+        contactIdValue,
       });
       setCustomerDetails(res.data?.value[0]);
-      if (res.data?.value[0].mec_gpcustomeruniqueid === null) {
-        addGPCustomerUniqueId(token, contactId);
-      }
     } catch (error) {
       console.error(error);
     }
@@ -117,6 +95,7 @@ function HomePage() {
           token,
           res.data?.value[0]?.mec_RequestedBy?._mec_contact_value
         );
+        setContactId(res.data?.value[0]?.mec_RequestedBy?._mec_contact_value);
       }
     } catch (error) {
       console.error(error);

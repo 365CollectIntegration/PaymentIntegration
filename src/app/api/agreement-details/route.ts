@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   try {
     const res = await collectAxios.get(
-      `/api/data/v9.2/mec_customerrequests?$filter=mec_name eq '${body.reference}'&$expand=mec_PaymentArrangement($select=mec_paymentfrequency,mec_promiseamount,mec_numberofpayments,mec_firstpromisedate,mec_lastpromisedate,mec_finalpaymentamount,mec_totalamount), mec_RequestedBy ($select=_mec_contact_value)`,
+      `/api/data/v9.2/mec_customerrequests?$filter=mec_name eq '${body.reference}'&$expand=mec_PaymentArrangement($select=mec_paymentfrequency,mec_promiseamount,mec_numberofpayments,mec_firstpromisedate,mec_lastpromisedate,mec_finalpaymentamount,mec_totalamount,mec_referencenumber,mec_gppaymentinstrumentid), mec_RequestedBy ($select=_mec_contact_value)`,
       {
         headers: {
           Accept: "application/json",
