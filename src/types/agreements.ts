@@ -7,6 +7,8 @@ export interface AgreementDataProps {
   mec_paymentfrequency: number;
   mec_promiseamount: number;
   mec_promisetopayid: string;
+  mec_referencenumber: string;
+  mec_gppaymentinstrumentid: string;
   _transactioncurrencyid_value: string;
 }
 

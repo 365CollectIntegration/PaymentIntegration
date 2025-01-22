@@ -8,12 +8,11 @@ import axios from "axios";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import { DetailsPage } from "@/components/pay-to/DetailsPage";
 import { ForAuthorizationPage } from "@/components/pay-to/ForAuthorizationPage";
-// import { gpAxios } from "@/utils/apiUtils";
-import { makeid } from "@/helpers/stringGenerator";
+// import { makeid } from "@/helpers/stringGenerator";
 import { frequencyCodeValue } from "@/helpers/frequencyCodeValue";
 import { convertDate } from "@/helpers/convertDate";
 import { AgreementDataProps } from "@/types/agreements";
-// import CustomerDetailsProps from "@/types/customerDetails";
+import CustomerDetailsProps from "@/types/customerDetails";
 
 enum PayToStep {
   ForSubmission = "ForSubmission",
@@ -25,10 +24,11 @@ function PayTo() {
   const searchParams = useSearchParams();
   const scrollToTop = useScrollToTop();
   const [step, setStep] = useState<PayToStep>(PayToStep.ForSubmission);
+  const [paymentArrangementId, setPaymentArrangementId] = useState<string>("");
   const [paymentInstrumentId, setPaymentInstrumentId] = useState<string>("");
   const [agreementData, setAgreementData] = useState<AgreementDataProps>();
-  // const [customerDetails, setCustomerDetails] =
-  //   useState<CustomerDetailsProps>();
+  const [customerDetails, setCustomerDetails] =
+    useState<CustomerDetailsProps>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLoadingClick, setIsLoadingClick] = useState<boolean>(false);
 
@@ -41,58 +41,11 @@ function PayTo() {
   };
 
   async function handleSubmit(bsb: string, bankAccount: string, name: string) {
-    const customerId = localStorage.getItem("customerId");
+    const token = localStorage.getItem("accessToken");
     setIsLoading(true);
-    // try {
-    //   const res = await gpAxios.post(
-    //     `/customers/${customerId}/PaymentInstruments`,
-    //     {
-    //       reference: makeid(6),
-    //       paymentAgreement: {
-    //         agreementDetails: {
-    //           paymentAgreementType: "mortgage",
-    //           frequency: "weekly",
-    //           establishmentType: "authorised",
-    //           startDate: "2025-01-30",
-    //           description: "mortgage payments",
-    //           balloonAgreementDetails: {
-    //             lastPaymentDate: "2026-12-30",
-    //             amount: +amount,
-    //             lastAmount: 10010,
-    //           },
-    //         },
-    //         payer: {
-    //           name: "Sample Customer",
-    //           type: "person",
-    //           account: {
-    //             bsb: "012306",
-    //             number: "12345678",
-    //           },
-    //         },
-    //       },
-    //     },
-    //     {
-    //       headers: {
-    //         Accept: "application/json, text/plain",
-    //         "Content-Type": "application/json",
-    //         "x-api-key":
-    //           "zzOIzbv-AlAbxp8.USNoE128vssg6sH4e6uUtUll1khphUhtdtdM1zaL9Kg",
-    //         "x-idempotency-key": uuid(),
-    //       },
-    //     }
-    //   );
-    //   setPaymentInstrumentId(res.data.id);
-    //   setIsLoading(false);
-    //   setStep(PayToStep.ForAuthorization);
-    //   scrollToTop();
-    // } catch (error) {
-    //   console.error(error);
-    // } finally {
-    //   setIsLoading(false);
-    // }
     axios({
       method: "POST",
-      url: `https://sandbox.api.gpaunz.com/customers/${customerId}/PaymentInstruments`,
+      url: `https://sandbox.api.gpaunz.com/customers/${customerDetails?.mec_gpcustomeruniqueid}/PaymentInstruments`,
       headers: {
         Accept: "application/json, text/plain",
         "Content-Type": "application/json",
@@ -101,7 +54,7 @@ function PayTo() {
         "x-idempotency-key": uuid(),
       },
       data: {
-        reference: makeid(6),
+        reference: agreementData?.mec_referencenumber || "",
         paymentAgreement: {
           agreementDetails: {
             paymentAgreementType: "other_service",
@@ -123,7 +76,9 @@ function PayTo() {
               ),
               amount: +bankAccount,
               lastAmount: agreementData?.mec_finalpaymentamount
-                ? parseInt(`${agreementData?.mec_finalpaymentamount}`)
+                ? Math.round(
+                    parseFloat(`${agreementData?.mec_finalpaymentamount}`)
+                  )
                 : null,
             },
           },
@@ -140,9 +95,7 @@ function PayTo() {
     })
       .then((res) => {
         setPaymentInstrumentId(res.data.id);
-        setIsLoading(false);
-        setStep(PayToStep.ForAuthorization);
-        scrollToTop();
+        addGPPaymentInstrumentId(token, res.data.id);
       })
       .catch(() => {
         setIsLoading(false);
@@ -150,40 +103,10 @@ function PayTo() {
   }
 
   async function handleClick() {
-    const customerId = localStorage.getItem("customerId");
     setIsLoading(true);
-    // try {
-    //   const res = await gpAxios.get(
-    //     `/customers/${customerId}/PaymentInstruments/${paymentInstrumentId}`,
-    //     {
-    //       headers: {
-    //         Accept: "application/json, text/plain",
-    //         "Content-Type": "application/json",
-    //         "x-api-key":
-    //           "zzOIzbv-AlAbxp8.USNoE128vssg6sH4e6uUtUll1khphUhtdtdM1zaL9Kg",
-    //         "x-idempotency-key": uuid(),
-    //       },
-    //     }
-    //   );
-    //   setIsLoadingClick(false);
-    //   scrollToTop();
-    //   if (res.data.paymentAgreement.agreementStatus === "active") {
-    //     router.push(
-    //       `/pay-to/approved?reference=${searchParams.get("reference")}`
-    //     );
-    //   } else if (res.data.paymentAgreement.agreementStatus === "cancelled") {
-    //     router.push(
-    //       `/pay-to/unapproved?reference=${searchParams.get("reference")}`
-    //     );
-    //   }
-    // } catch (error) {
-    //   console.error(error);
-    // } finally {
-    //   setIsLoadingClick(false);
-    // }
     axios({
       method: "GET",
-      url: `https://sandbox.api.gpaunz.com/customers/${customerId}/PaymentInstruments/${paymentInstrumentId}`,
+      url: `https://sandbox.api.gpaunz.com/customers/${customerDetails?.mec_gpcustomeruniqueid}/PaymentInstruments/${paymentInstrumentId}`,
       headers: {
         Accept: "application/json, text/plain",
         "Content-Type": "application/json",
@@ -210,17 +133,40 @@ function PayTo() {
       });
   }
 
-  // async function getCustomerDetails(token: string, contactId: string) {
-  //   try {
-  //     const res = await axios.post("/api/customer-details", {
-  //       token,
-  //       contactId,
-  //     });
-  //     setCustomerDetails(res.data?.value[0]);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // }
+  async function addGPPaymentInstrumentId(
+    token: string | null,
+    gpInstrumentId: string
+  ) {
+    try {
+      const res = await axios.post("/api/add-payment-instrument-id", {
+        token,
+        paymentArrangementId,
+        gpInstrumentId: gpInstrumentId,
+      });
+      if (res.data === "") {
+        setIsLoading(false);
+        setStep(PayToStep.ForAuthorization);
+        scrollToTop();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function getCustomerDetails(
+    token: string | null,
+    contactIdValue: string
+  ) {
+    try {
+      const res = await axios.post("/api/customer-details", {
+        token,
+        contactIdValue,
+      });
+      setCustomerDetails(res.data?.value[0]);
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   async function getAgreementDetails(token: string | null) {
     try {
@@ -228,7 +174,16 @@ function PayTo() {
         token,
         reference: searchParams.get("reference"),
       });
+      setPaymentArrangementId(
+        res.data?.value[0]?._mec_paymentarrangement_value
+      );
       setAgreementData(res.data?.value[0]?.mec_PaymentArrangement);
+      if (res.data?.value[0]?.mec_RequestedBy?._mec_contact_value) {
+        getCustomerDetails(
+          token,
+          res.data?.value[0]?.mec_RequestedBy?._mec_contact_value
+        );
+      }
     } catch (error) {
       console.error(error);
     }

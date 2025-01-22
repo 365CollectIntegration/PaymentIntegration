@@ -4,8 +4,11 @@ import { collectAxios } from "@/utils/apiUtils";
 export async function POST(req: NextRequest) {
   const body = await req.json();
   try {
-    const res = await collectAxios.get(
-      `/api/data/v9.2/contacts?$filter=contactid eq ${body.contactIdValue}&$select=emailaddress1,fullname,mec_customerreferenceid,mec_gpcustomeruniqueid`,
+    const res = await collectAxios.patch(
+      `/api/data/v9.2/mec_promisetopaies(${body.paymentArrangementId})`,
+      {
+        mec_gppaymentinstrumentid: body.gpInstrumentId,
+      },
       {
         headers: {
           Accept: "application/json",
