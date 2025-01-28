@@ -136,6 +136,43 @@ function PayTo() {
       });
   }
 
+  // useEffect(() => {
+  //   axios({
+  //     method: "POST",
+  //     url: `https://mock.globalrapid.io/webhooks`,
+  //     headers: {
+  //       Accept: "application/json, text/plain",
+  //       "Content-Type": "application/json",
+  //       "x-api-key": "eyJ1c2VyIjogMTIzNCwgImFwaUtleSI6ICJ0ZXN0MTIzNCJ9",
+  //     },
+  //     data: {
+  //       event: "payment_instruments",
+  //       url: "https://365paymentgateway.azurewebsites.net/",
+  //     },
+  //   })
+  //     .then((res) => {
+  //       console.log("ZXC: ", res.data);
+  //       retrieveWebhook(res.data.id);
+  //     })
+  //     .catch();
+  // }, []);
+
+  // const retrieveWebhook = (id: string) => {
+  //   axios({
+  //     method: "GET",
+  //     url: `https://mock.globalrapid.io/webhooks/${id}`,
+  //     headers: {
+  //       Accept: "application/json, text/plain",
+  //       "Content-Type": "application/json",
+  //       "x-api-key": "eyJ1c2VyIjogMTIzNCwgImFwaUtleSI6ICJ0ZXN0MTIzNCJ9",
+  //     },
+  //   })
+  //     .then((res) => {
+  //       console.log("ZXC: ", res.data);
+  //     })
+  //     .catch();
+  // };
+
   async function addGPPaymentInstrumentId(
     token: string | null,
     gpInstrumentId: string
