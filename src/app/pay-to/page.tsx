@@ -75,11 +75,11 @@ function PayTo() {
                   : "N/A"
               ),
               amount: agreementData?.mec_promiseamount
-                ? parseFloat(`${agreementData?.mec_promiseamount.toFixed(2)}`) *
+                ? parseInt(`${agreementData?.mec_promiseamount.toFixed(2)}`) *
                   100
                 : null,
               lastAmount: agreementData?.mec_finalpaymentamount
-                ? parseFloat(
+                ? parseInt(
                     `${agreementData?.mec_finalpaymentamount.toFixed(2)}`
                   ) * 100
                 : null,
@@ -99,6 +99,7 @@ function PayTo() {
       .then((res) => {
         setPaymentInstrumentId(res.data.id);
         addGPPaymentInstrumentId(token, res.data.id);
+        createWebhook();
       })
       .catch(() => {
         setIsLoading(false);
@@ -136,42 +137,41 @@ function PayTo() {
       });
   }
 
-  // useEffect(() => {
-  //   axios({
-  //     method: "POST",
-  //     url: `https://mock.globalrapid.io/webhooks`,
-  //     headers: {
-  //       Accept: "application/json, text/plain",
-  //       "Content-Type": "application/json",
-  //       "x-api-key": "eyJ1c2VyIjogMTIzNCwgImFwaUtleSI6ICJ0ZXN0MTIzNCJ9",
-  //     },
-  //     data: {
-  //       event: "payment_instruments",
-  //       url: "https://365paymentgateway.azurewebsites.net/",
-  //     },
-  //   })
-  //     .then((res) => {
-  //       console.log("ZXC: ", res.data);
-  //       retrieveWebhook(res.data.id);
-  //     })
-  //     .catch();
-  // }, []);
+  const createWebhook = () => {
+    axios({
+      method: "POST",
+      url: `https://mock.globalrapid.io/webhooks`,
+      headers: {
+        Accept: "application/json, text/plain",
+        "Content-Type": "application/json",
+        "x-api-key": "eyJ1c2VyIjogMTIzNCwgImFwaUtleSI6ICJ0ZXN0MTIzNCJ9",
+      },
+      data: {
+        event: "payment_instruments",
+        url: "https://365paymentgateway.azurewebsites.net/pay-to",
+      },
+    })
+      .then((res) => {
+        retrieveWebhook(res.data.id);
+      })
+      .catch();
+  };
 
-  // const retrieveWebhook = (id: string) => {
-  //   axios({
-  //     method: "GET",
-  //     url: `https://mock.globalrapid.io/webhooks/${id}`,
-  //     headers: {
-  //       Accept: "application/json, text/plain",
-  //       "Content-Type": "application/json",
-  //       "x-api-key": "eyJ1c2VyIjogMTIzNCwgImFwaUtleSI6ICJ0ZXN0MTIzNCJ9",
-  //     },
-  //   })
-  //     .then((res) => {
-  //       console.log("ZXC: ", res.data);
-  //     })
-  //     .catch();
-  // };
+  const retrieveWebhook = (id: string) => {
+    axios({
+      method: "GET",
+      url: `https://mock.globalrapid.io/webhooks/${id}`,
+      headers: {
+        Accept: "application/json, text/plain",
+        "Content-Type": "application/json",
+        "x-api-key": "eyJ1c2VyIjogMTIzNCwgImFwaUtleSI6ICJ0ZXN0MTIzNCJ9",
+      },
+    })
+      .then((res) => {
+        console.log("ZXC: ", res.data);
+      })
+      .catch();
+  };
 
   async function addGPPaymentInstrumentId(
     token: string | null,
