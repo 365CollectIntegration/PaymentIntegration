@@ -10,9 +10,9 @@ export async function POST(req: NextRequest) {
       { 
         reference: body.reference,
         redirectUrl: body.redirectUrl,
-        category: body.category,
+        category: body?.category || null,
         payment: body.payment,
-        payer: body.payer
+        payer: body?.payer || null
       },
       {
         headers: {
