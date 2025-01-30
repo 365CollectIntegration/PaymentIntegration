@@ -28,7 +28,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="flex bg-pa-background-box py-4">
+        <div className="flex bg-pa-background-box py-4"
+        style={{
+          backgroundImage: "url('https://365rapidapp.powerappsportals.com/MyDashboardBG.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}>
           <Image
             className="m-auto w-6/12 md:w-3/12"
             src="/images/365_Collect_Logo_Main.png"
