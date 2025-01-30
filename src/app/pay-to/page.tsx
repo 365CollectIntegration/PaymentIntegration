@@ -75,13 +75,18 @@ function PayTo() {
                   : "N/A"
               ),
               amount: agreementData?.mec_promiseamount
-                ? parseInt(`${agreementData?.mec_promiseamount.toFixed(2)}`) *
-                  100
+                ? Math.round(
+                    parseFloat(
+                      `${agreementData?.mec_promiseamount.toFixed(2)}`
+                    ) * 100
+                  )
                 : null,
               lastAmount: agreementData?.mec_finalpaymentamount
-                ? parseInt(
-                    `${agreementData?.mec_finalpaymentamount.toFixed(2)}`
-                  ) * 100
+                ? Math.round(
+                    parseFloat(
+                      `${agreementData?.mec_finalpaymentamount.toFixed(2)}`
+                    ) * 100
+                  )
                 : null,
             },
           },
