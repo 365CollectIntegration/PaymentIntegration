@@ -9,7 +9,7 @@ import { Button } from "@/components/Button";
 import { Field, FieldsContainer, FormTitle } from "@/components/Field";
 import { convertDate } from "@/helpers/convertDate";
 import { frequencyCodeValue } from "@/helpers/frequencyCodeValue";
-import { AgreementDataProps } from "@/types/agreements";
+import { AgreementDataProps, PaymentDataProps } from "@/types/agreements";
 import CustomerDetailsProps from "@/types/customerDetails";
 
 function HomePage() {
@@ -17,9 +17,11 @@ function HomePage() {
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [agreementData, setAgreementData] = useState<AgreementDataProps>();
+  const [paymentData, setPaymentData] = useState<PaymentDataProps>();
   const [customerDetails, setCustomerDetails] =
     useState<CustomerDetailsProps>();
   const [contactId, setContactId] = useState<string>();
+  const [requestType, setRequestType] = useState<number>();
 
   async function handleClick() {
     const accessToken = localStorage.getItem("accessToken");
@@ -90,6 +92,8 @@ function HomePage() {
         reference: searchParams.get("reference"),
       });
       setAgreementData(res.data?.value[0]?.mec_PaymentArrangement);
+      setPaymentData(res.data?.value[0]?.mec_Payment);
+      setRequestType(res.data?.value[0]?.mec_requesttype);
       if (res.data?.value[0]?.mec_RequestedBy?._mec_contact_value) {
         getCustomerDetails(
           token,
@@ -120,59 +124,86 @@ function HomePage() {
   return (
     <div className="flex flex-col px-8 pb-8 pt-4">
       <div className="mx-auto my-5 w-full rounded-xl border border-gray-100 p-4 shadow-md md:w-5/12">
-        <FormTitle text="Your Payment Plan" />
-        {agreementData ? (
-          <FieldsContainer>
-            <Field
-              label="Total Amount"
-              value={
-                agreementData?.mec_totalamount
-                  ? `$${agreementData?.mec_totalamount?.toFixed(2)}`
-                  : "N/A"
+        {agreementData || paymentData ? (
+          <>
+            <FormTitle
+              text={
+                requestType === 179050000 ? "Your Payment" : "Your Payment Plan"
               }
             />
-            <Field
-              label="Frequency"
-              value={frequencyCodeValue(agreementData?.mec_paymentfrequency)}
-            />
-            <Field
-              label="Number of payments"
-              value={agreementData?.mec_numberofpayments}
-            />
-            <Field
-              label="Start Date"
-              value={
-                agreementData?.mec_firstpromisedate
-                  ? convertDate(agreementData?.mec_firstpromisedate || "")
-                  : "N/A"
-              }
-            />
-            <Field
-              label="End Date"
-              value={
-                agreementData?.mec_lastpromisedate
-                  ? convertDate(agreementData?.mec_lastpromisedate || "")
-                  : "N/A"
-              }
-            />
-            <Field
-              label="Ongoing Payments"
-              value={
-                agreementData?.mec_promiseamount
-                  ? `$${agreementData?.mec_promiseamount?.toFixed(2)}`
-                  : "N/A"
-              }
-            />
-            <Field
-              label="Last Payment"
-              value={
-                agreementData?.mec_finalpaymentamount
-                  ? `$${agreementData?.mec_finalpaymentamount?.toFixed(2)}`
-                  : "N/A"
-              }
-              withoutBorder
-            />
-          </FieldsContainer>
+            {requestType === 179050000 ? (
+              <div className="flex h-64">
+                <div className="m-auto text-lg">
+                  <div className="flex flex-row mb-3">
+                    <div className="font-bold">Total Amount: </div>
+                    <div className="ml-2 font-medium">
+                      {paymentData?.mec_amountpaid || "N/A"}
+                    </div>
+                  </div>
+                  <div className="flex flex-row">
+                    <div className="font-bold">Payment Date: </div>
+                    <div className="ml-2 font-medium">
+                      {paymentData?.mec_duedate || "N/A"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <FieldsContainer>
+                <Field
+                  label="Total Amount"
+                  value={
+                    agreementData?.mec_totalamount
+                      ? `$${agreementData?.mec_totalamount?.toFixed(2)}`
+                      : "N/A"
+                  }
+                />
+                <Field
+                  label="Frequency"
+                  value={frequencyCodeValue(
+                    agreementData?.mec_paymentfrequency || 0
+                  )}
+                />
+                <Field
+                  label="Number of payments"
+                  value={agreementData?.mec_numberofpayments}
+                />
+                <Field
+                  label="Start Date"
+                  value={
+                    agreementData?.mec_firstpromisedate
+                      ? convertDate(agreementData?.mec_firstpromisedate || "")
+                      : "N/A"
+                  }
+                />
+                <Field
+                  label="End Date"
+                  value={
+                    agreementData?.mec_lastpromisedate
+                      ? convertDate(agreementData?.mec_lastpromisedate || "")
+                      : "N/A"
+                  }
+                />
+                <Field
+                  label="Ongoing Payments"
+                  value={
+                    agreementData?.mec_promiseamount
+                      ? `$${agreementData?.mec_promiseamount?.toFixed(2)}`
+                      : "N/A"
+                  }
+                />
+                <Field
+                  label="Last Payment"
+                  value={
+                    agreementData?.mec_finalpaymentamount
+                      ? `$${agreementData?.mec_finalpaymentamount?.toFixed(2)}`
+                      : "N/A"
+                  }
+                  withoutBorder
+                />
+              </FieldsContainer>
+            )}
+          </>
         ) : (
           <>
             <svg

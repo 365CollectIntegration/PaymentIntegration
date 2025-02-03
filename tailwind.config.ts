@@ -35,6 +35,10 @@ export default {
         "pa-button-light": "#1486BF",
       },
     },
+    backgroundImage: () => ({
+      "header-bg":
+        "url('https://365rapidapp.powerappsportals.com/MyDashboardBG.png')",
+    }),
   },
   plugins: [],
 } satisfies Config;
