@@ -12,6 +12,12 @@ export interface AgreementDataProps {
   _transactioncurrencyid_value: string;
 }
 
+export interface PaymentDataProps {
+  mec_referencenumber: string;
+  mec_duedate: string;
+  mec_amountpaid: number;
+}
+
 export interface ContactProps {
   _mec_contact_value: string;
   mec_relatedpartiesid: string;

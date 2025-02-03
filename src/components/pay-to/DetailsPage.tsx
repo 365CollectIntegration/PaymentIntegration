@@ -8,7 +8,7 @@ import { List } from "@/components/List";
 import { Button } from "@/components/Button";
 import { Field, FieldsContainer, FormTitle } from "@/components/Field";
 import { STORE_NAME } from "@/helpers/common";
-import { AgreementDataProps } from "@/types/agreements";
+import { AgreementDataProps, PaymentDataProps } from "@/types/agreements";
 import { convertDate } from "@/helpers/convertDate";
 
 export interface PayToFormData {
@@ -31,12 +31,16 @@ type DetailsPageProps = {
   onSubmit: (bsb: string, bankAccount: string, name: string) => void;
   isLoading?: boolean;
   agreementData?: AgreementDataProps;
+  paymentData?: PaymentDataProps;
+  requestType?: number;
 };
 
 export function DetailsPage({
   onSubmit,
   isLoading,
   agreementData,
+  paymentData,
+  requestType,
 }: DetailsPageProps) {
   return (
     <div className="flex flex-col justify-center px-8 pb-8 pt-4">
@@ -46,6 +50,8 @@ export function DetailsPage({
           onSubmit={onSubmit}
           isLoading={isLoading}
           agreementData={agreementData}
+          paymentData={paymentData}
+          requestType={requestType}
         />
       </div>
     </div>
@@ -79,6 +85,8 @@ function PaymentDetails({
   onSubmit,
   isLoading,
   agreementData,
+  paymentData,
+  requestType,
 }: DetailsPageProps) {
   const { register, getValues } = useForm<PayToFormData>();
 
@@ -100,29 +108,47 @@ function PaymentDetails({
           />
           <TextField id="name" label="NAME" register={register} />
         </div>
-        <FieldsContainer>
-          <Field
-            label="Ongoing Payments"
-            value={
-              agreementData?.mec_promiseamount
-                ? `$${agreementData?.mec_promiseamount?.toFixed(2)}`
-                : "N/A"
-            }
-          />
-          <Field
-            label="Last Payment"
-            value={
-              agreementData?.mec_finalpaymentamount
-                ? `$${agreementData?.mec_finalpaymentamount?.toFixed(2)}`
-                : "N/A"
-            }
-          />
-          <Field
-            label="Start Date"
-            value={convertDate(agreementData?.mec_firstpromisedate || "")}
-            withoutBorder
-          />
-        </FieldsContainer>
+        {requestType === 179050000 ? (
+          <FieldsContainer>
+            <Field
+              label="Total Amount"
+              value={
+                paymentData?.mec_amountpaid
+                  ? `$${paymentData?.mec_amountpaid?.toFixed(2)}`
+                  : "N/A"
+              }
+            />
+            <Field
+              label="Payment Date"
+              value={convertDate(paymentData?.mec_duedate || "")}
+              withoutBorder
+            />
+          </FieldsContainer>
+        ) : (
+          <FieldsContainer>
+            <Field
+              label="Ongoing Payments"
+              value={
+                agreementData?.mec_promiseamount
+                  ? `$${agreementData?.mec_promiseamount?.toFixed(2)}`
+                  : "N/A"
+              }
+            />
+            <Field
+              label="Last Payment"
+              value={
+                agreementData?.mec_finalpaymentamount
+                  ? `$${agreementData?.mec_finalpaymentamount?.toFixed(2)}`
+                  : "N/A"
+              }
+            />
+            <Field
+              label="Start Date"
+              value={convertDate(agreementData?.mec_firstpromisedate || "")}
+              withoutBorder
+            />
+          </FieldsContainer>
+        )}
       </div>
       <div className="mt-5 rounded-xl border border-pa-background-box bg-pa-background-box p-4 shadow-md md:p-8">
         <div className="text-sm">

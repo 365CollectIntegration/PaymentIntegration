@@ -11,7 +11,7 @@ import { ForAuthorizationPage } from "@/components/pay-to/ForAuthorizationPage";
 // import { makeid } from "@/helpers/stringGenerator";
 import { frequencyCodeValue } from "@/helpers/frequencyCodeValue";
 import { convertDate } from "@/helpers/convertDate";
-import { AgreementDataProps } from "@/types/agreements";
+import { AgreementDataProps, PaymentDataProps } from "@/types/agreements";
 import CustomerDetailsProps from "@/types/customerDetails";
 
 enum PayToStep {
@@ -27,6 +27,8 @@ function PayTo() {
   const [paymentArrangementId, setPaymentArrangementId] = useState<string>("");
   const [paymentInstrumentId, setPaymentInstrumentId] = useState<string>("");
   const [agreementData, setAgreementData] = useState<AgreementDataProps>();
+  const [paymentData, setPaymentData] = useState<PaymentDataProps>();
+  const [requestType, setRequestType] = useState<number>();
   const [customerDetails, setCustomerDetails] =
     useState<CustomerDetailsProps>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -54,40 +56,64 @@ function PayTo() {
         "x-idempotency-key": uuid(),
       },
       data: {
-        reference: agreementData?.mec_referencenumber || "",
+        reference:
+          requestType === 179050000
+            ? paymentData?.mec_referencenumber
+            : agreementData?.mec_referencenumber || "",
         paymentAgreement: {
           agreementDetails: {
             paymentAgreementType: "other_service",
-            frequency: frequencyCodeValue(
-              agreementData?.mec_paymentfrequency || 0
-            ),
+            frequency:
+              requestType === 179050000
+                ? "adhoc"
+                : frequencyCodeValue(agreementData?.mec_paymentfrequency || 0),
             establishmentType: "authorised",
-            startDate: formatDate(
-              agreementData?.mec_firstpromisedate
-                ? convertDate(agreementData?.mec_firstpromisedate || "")
-                : "N/A"
-            ),
+            startDate:
+              requestType === 179050000
+                ? paymentData?.mec_duedate
+                  ? convertDate(paymentData?.mec_duedate || "")
+                  : "N/A"
+                : formatDate(
+                    agreementData?.mec_firstpromisedate
+                      ? convertDate(agreementData?.mec_firstpromisedate || "")
+                      : "N/A"
+                  ),
             description: "Payment Arrangement",
             balloonAgreementDetails: {
-              lastPaymentDate: formatDate(
-                agreementData?.mec_lastpromisedate
-                  ? convertDate(agreementData?.mec_lastpromisedate || "")
-                  : "N/A"
-              ),
-              amount: agreementData?.mec_promiseamount
-                ? Math.round(
-                    parseFloat(
-                      `${agreementData?.mec_promiseamount.toFixed(2)}`
-                    ) * 100
-                  )
-                : null,
-              lastAmount: agreementData?.mec_finalpaymentamount
-                ? Math.round(
-                    parseFloat(
-                      `${agreementData?.mec_finalpaymentamount.toFixed(2)}`
-                    ) * 100
-                  )
-                : null,
+              lastPaymentDate:
+                requestType === 179050000
+                  ? "N/A"
+                  : formatDate(
+                      agreementData?.mec_lastpromisedate
+                        ? convertDate(agreementData?.mec_lastpromisedate || "")
+                        : "N/A"
+                    ),
+              amount:
+                requestType === 179050000
+                  ? paymentData?.mec_amountpaid
+                    ? Math.round(
+                        parseFloat(
+                          `${paymentData?.mec_amountpaid.toFixed(2)}`
+                        ) * 100
+                      )
+                    : null
+                  : agreementData?.mec_promiseamount
+                  ? Math.round(
+                      parseFloat(
+                        `${agreementData?.mec_promiseamount.toFixed(2)}`
+                      ) * 100
+                    )
+                  : null,
+              lastAmount:
+                requestType === 179050000
+                  ? "N/A"
+                  : agreementData?.mec_finalpaymentamount
+                  ? Math.round(
+                      parseFloat(
+                        `${agreementData?.mec_finalpaymentamount.toFixed(2)}`
+                      ) * 100
+                    )
+                  : null,
             },
           },
           payer: {
@@ -223,6 +249,8 @@ function PayTo() {
         res.data?.value[0]?._mec_paymentarrangement_value
       );
       setAgreementData(res.data?.value[0]?.mec_PaymentArrangement);
+      setPaymentData(res.data?.value[0]?.mec_Payment);
+      setRequestType(res.data?.value[0]?.mec_requesttype);
       if (res.data?.value[0]?.mec_RequestedBy?._mec_contact_value) {
         getCustomerDetails(
           token,
@@ -248,6 +276,8 @@ function PayTo() {
               onSubmit={handleSubmit}
               isLoading={isLoading}
               agreementData={agreementData}
+              paymentData={paymentData}
+              requestType={requestType}
             />
           ) : (
             <svg
