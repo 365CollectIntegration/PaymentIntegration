@@ -1,0 +1,56 @@
+name: Azure Node.js App Service Deploy
+
+on:
+  push:
+    branches:
+      - poc  # Trigger deployment on push to the main branch (you can adjust this to your preferred branch)
+  workflow_dispatch:  # Allow manual trigger of deployment
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest  # You can choose other OS like windows-latest if needed
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2  # Checkout the repository code
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '20.18.1'  # Set the Node.js version (adjust as needed)
+
+    - name: Install dependencies
+      run: |
+        npm install  # Install Node.js dependencies
+
+    - name: Build the Next.js app
+      run: |
+        npm run build  # Build the Next.js app
+
+    - name: Prepare deployment package
+      run: |
+        zip -r app.zip .next node_modules package.json package-lock.json public  # Prepare the deployment package (you can modify this as per your structure)
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app.zip
+        path: app.zip  # Upload the deployment package to GitHub Actions artifact
+
+  deploy:
+    runs-on: ubuntu-latest  # You can choose other OS like windows-latest if needed
+    needs: build  # This depends on the previous build job
+
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: app.zip
+
+    - name: Azure WebApp Deploy
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: '365PaymentGateway'  # Replace with your Azure App Service name       
+        publish-profile: ${{ secrets.PublishProfilePoc }}  # Add your publish profile to GitHub Secrets
+        slot-name: 'poc'
+        package: ./app.zip  # Path to the deployment package
