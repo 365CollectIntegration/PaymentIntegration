@@ -271,7 +271,7 @@ function PayTo() {
     case PayToStep.ForSubmission:
       return (
         <>
-          {agreementData ? (
+          {agreementData || paymentData ? (
             <DetailsPage
               onSubmit={handleSubmit}
               isLoading={isLoading}
