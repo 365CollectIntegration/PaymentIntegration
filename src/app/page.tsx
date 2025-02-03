@@ -132,21 +132,25 @@ function HomePage() {
               }
             />
             {requestType === 179050000 ? (
-              <div className="flex h-64">
-                <div className="m-auto text-lg">
-                  <div className="flex flex-row mb-3">
-                    <div className="font-bold">Total Amount: </div>
-                    <div className="ml-2 font-medium">
-                      {paymentData?.mec_amountpaid || "N/A"}
-                    </div>
-                  </div>
-                  <div className="flex flex-row">
-                    <div className="font-bold">Payment Date: </div>
-                    <div className="ml-2 font-medium">
-                      {paymentData?.mec_duedate || "N/A"}
-                    </div>
-                  </div>
-                </div>
+              <div className="pb-5">
+                <FieldsContainer>
+                  <Field
+                    label="Total Amount"
+                    value={
+                      paymentData?.mec_amountpaid
+                        ? `$${paymentData?.mec_amountpaid?.toFixed(2)}`
+                        : "N/A"
+                    }
+                  />
+                  <Field
+                    label="Payment Date"
+                    value={
+                      paymentData?.mec_duedate
+                        ? convertDate(paymentData?.mec_duedate || "")
+                        : "N/A"
+                    }
+                  />
+                </FieldsContainer>
               </div>
             ) : (
               <FieldsContainer>
