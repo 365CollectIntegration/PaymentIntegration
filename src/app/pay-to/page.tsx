@@ -70,9 +70,11 @@ function PayTo() {
             establishmentType: "authorised",
             startDate:
               requestType === 179050000
-                ? paymentData?.mec_duedate
+                ? formatDate(
+                  paymentData?.mec_duedate
                   ? convertDate(paymentData?.mec_duedate || "")
                   : "N/A"
+                )
                 : formatDate(
                     agreementData?.mec_firstpromisedate
                       ? convertDate(agreementData?.mec_firstpromisedate || "")
@@ -82,7 +84,7 @@ function PayTo() {
             balloonAgreementDetails: {
               lastPaymentDate:
                 requestType === 179050000
-                  ? "N/A"
+                  ? null
                   : formatDate(
                       agreementData?.mec_lastpromisedate
                         ? convertDate(agreementData?.mec_lastpromisedate || "")
@@ -106,7 +108,7 @@ function PayTo() {
                   : null,
               lastAmount:
                 requestType === 179050000
-                  ? "N/A"
+                  ? null
                   : agreementData?.mec_finalpaymentamount
                   ? Math.round(
                       parseFloat(
