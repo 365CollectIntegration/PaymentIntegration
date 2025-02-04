@@ -22,7 +22,7 @@ function PayTo() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const scrollToTop = useScrollToTop();
-  const [step, setStep] = useState<PayToStep>(PayToStep.ForAuthorization);
+  const [step, setStep] = useState<PayToStep>(PayToStep.ForSubmission);
   const [paymentArrangementId, setPaymentArrangementId] = useState<string>("");
   const [paymentInstrumentId, setPaymentInstrumentId] = useState<string>("");
   const [agreementData, setAgreementData] = useState<AgreementDataProps>();
