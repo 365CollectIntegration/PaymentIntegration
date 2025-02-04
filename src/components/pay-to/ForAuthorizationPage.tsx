@@ -10,7 +10,7 @@ import { STORE_NAME } from "@/helpers/common";
 import { COLOR_VARIANT } from "@/helpers/componentHelpers";
 import { convertDate } from "@/helpers/convertDate";
 import { frequencyCodeValue } from "@/helpers/frequencyCodeValue";
-import { AgreementDataProps } from "@/types/agreements";
+import { AgreementDataProps, PaymentDataProps } from "@/types/agreements";
 
 import styles from "./ForAuthorizationPage.module.scss";
 
@@ -29,12 +29,16 @@ type ForAuthorizationPageProps = {
   onClick: () => void;
   isLoading?: boolean;
   agreementData?: AgreementDataProps;
+  paymentData?: PaymentDataProps;
+  requestType?: number;
 };
 
 export function ForAuthorizationPage({
   onClick,
   isLoading,
   agreementData,
+  paymentData,
+  requestType,
 }: ForAuthorizationPageProps) {
   return (
     <div className="flex flex-col p-8">
@@ -43,6 +47,8 @@ export function ForAuthorizationPage({
         onClick={onClick}
         isLoading={isLoading}
         agreementData={agreementData}
+        paymentData={paymentData}
+        requestType={requestType}
       />
     </div>
   );
@@ -84,6 +90,8 @@ function AgreementDetails({
   onClick,
   isLoading,
   agreementData,
+  paymentData,
+  requestType,
 }: ForAuthorizationPageProps) {
   return (
     <div className="mx-auto mt-3 w-full md:w-5/12">
@@ -111,41 +119,66 @@ function AgreementDetails({
 
       <div className="my-8 rounded-xl border border-gray-100 p-4 shadow-md md:p-8">
         <FormTitle text="Agreement Details" />
-        <FieldsContainer>
-          <Field
-            label="Payee"
-            value={`Global Payments on behalf of ${STORE_NAME}`}
-          />
-          <Field
-            label="Frequency"
-            value={frequencyCodeValue(agreementData?.mec_paymentfrequency || 0)}
-          />
-          <Field
-            label="Start Date"
-            value={convertDate(agreementData?.mec_firstpromisedate || "")}
-          />
-          <Field
-            label="End Date"
-            value={convertDate(agreementData?.mec_lastpromisedate || "")}
-          />
-          <Field
-            label="Ongoing Payments"
-            value={
-              agreementData?.mec_promiseamount
-                ? `$${agreementData?.mec_promiseamount?.toFixed(2)}`
-                : "N/A"
-            }
-          />
-          <Field
-            label="Last Payment"
-            value={
-              agreementData?.mec_finalpaymentamount
-                ? `$${agreementData?.mec_finalpaymentamount?.toFixed(2)}`
-                : "N/A"
-            }
-            withoutBorder
-          />
-        </FieldsContainer>
+        {requestType === 179050000 ? (
+          <div className="pb-5">
+            <FieldsContainer>
+              <Field
+                label="Total Amount"
+                value={
+                  paymentData?.mec_amountpaid
+                    ? `$${paymentData?.mec_amountpaid?.toFixed(2)}`
+                    : "N/A"
+                }
+              />
+              <Field
+                label="Payment Date"
+                value={
+                  paymentData?.mec_duedate
+                    ? convertDate(paymentData?.mec_duedate || "")
+                    : "N/A"
+                }
+              />
+            </FieldsContainer>
+          </div>
+        ) : (
+          <FieldsContainer>
+            <Field
+              label="Payee"
+              value={`Global Payments on behalf of ${STORE_NAME}`}
+            />
+            <Field
+              label="Frequency"
+              value={frequencyCodeValue(
+                agreementData?.mec_paymentfrequency || 0
+              )}
+            />
+            <Field
+              label="Start Date"
+              value={convertDate(agreementData?.mec_firstpromisedate || "")}
+            />
+            <Field
+              label="End Date"
+              value={convertDate(agreementData?.mec_lastpromisedate || "")}
+            />
+            <Field
+              label="Ongoing Payments"
+              value={
+                agreementData?.mec_promiseamount
+                  ? `$${agreementData?.mec_promiseamount?.toFixed(2)}`
+                  : "N/A"
+              }
+            />
+            <Field
+              label="Last Payment"
+              value={
+                agreementData?.mec_finalpaymentamount
+                  ? `$${agreementData?.mec_finalpaymentamount?.toFixed(2)}`
+                  : "N/A"
+              }
+              withoutBorder
+            />
+          </FieldsContainer>
+        )}
       </div>
       <Button
         label="Simulate Banking App"

@@ -8,7 +8,6 @@ import axios from "axios";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import { DetailsPage } from "@/components/pay-to/DetailsPage";
 import { ForAuthorizationPage } from "@/components/pay-to/ForAuthorizationPage";
-// import { makeid } from "@/helpers/stringGenerator";
 import { frequencyCodeValue } from "@/helpers/frequencyCodeValue";
 import { convertDate } from "@/helpers/convertDate";
 import { AgreementDataProps, PaymentDataProps } from "@/types/agreements";
@@ -64,25 +63,28 @@ function PayTo() {
           agreementDetails: {
             paymentAgreementType: "other_service",
             frequency:
-              requestType === 179050000
+              requestType === 179050000 ||
+              agreementData?.mec_paymentfrequency === 278510004
                 ? "adhoc"
                 : frequencyCodeValue(agreementData?.mec_paymentfrequency || 0),
             establishmentType: "authorised",
             startDate:
               requestType === 179050000
-                ? paymentData?.mec_duedate
-                  ? convertDate(paymentData?.mec_duedate || "")
-                  : "N/A"
+                ? formatDate(
+                    paymentData?.mec_duedate
+                      ? convertDate(paymentData?.mec_duedate || "")
+                      : "N/A"
+                  )
                 : formatDate(
                     agreementData?.mec_firstpromisedate
                       ? convertDate(agreementData?.mec_firstpromisedate || "")
                       : "N/A"
                   ),
-            description: "Payment Arrangement",
+            description: `Payment ${searchParams.get("reference")}`,
             balloonAgreementDetails: {
               lastPaymentDate:
                 requestType === 179050000
-                  ? "N/A"
+                  ? null
                   : formatDate(
                       agreementData?.mec_lastpromisedate
                         ? convertDate(agreementData?.mec_lastpromisedate || "")
@@ -106,7 +108,7 @@ function PayTo() {
                   : null,
               lastAmount:
                 requestType === 179050000
-                  ? "N/A"
+                  ? null
                   : agreementData?.mec_finalpaymentamount
                   ? Math.round(
                       parseFloat(
@@ -321,6 +323,8 @@ function PayTo() {
           onClick={handleClick}
           isLoading={isLoadingClick}
           agreementData={agreementData}
+          paymentData={paymentData}
+          requestType={requestType}
         />
       );
     default:

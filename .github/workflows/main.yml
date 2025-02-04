@@ -53,3 +53,23 @@ jobs:
         app-name: '365PaymentGateway'  # Replace with your Azure App Service name       
         publish-profile: ${{ secrets.PublishProfile }}  # Add your publish profile to GitHub Secrets
         package: ./app.zip  # Path to the deployment package
+
+  delete_merged_branch:
+    runs-on: ubuntu-latest
+    needs: deploy  # Ensure branch deletion happens after deployment
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Delete merged branches
+      env:
+        GITHUB_TOKEN: ${{ secrets.GithubToken }}
+      run: |
+        # Get the list of branches merged into main
+        MERGED_BRANCHES=$(git branch -r --merged origin/main | grep -v "main" | sed 's/origin\///')
+
+        for BRANCH in $MERGED_BRANCHES; do
+          echo "Deleting merged branch: $BRANCH"
+          git push origin --delete $BRANCH
+        done
