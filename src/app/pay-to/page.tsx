@@ -8,7 +8,6 @@ import axios from "axios";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import { DetailsPage } from "@/components/pay-to/DetailsPage";
 import { ForAuthorizationPage } from "@/components/pay-to/ForAuthorizationPage";
-// import { makeid } from "@/helpers/stringGenerator";
 import { frequencyCodeValue } from "@/helpers/frequencyCodeValue";
 import { convertDate } from "@/helpers/convertDate";
 import { AgreementDataProps, PaymentDataProps } from "@/types/agreements";
@@ -23,7 +22,7 @@ function PayTo() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const scrollToTop = useScrollToTop();
-  const [step, setStep] = useState<PayToStep>(PayToStep.ForSubmission);
+  const [step, setStep] = useState<PayToStep>(PayToStep.ForAuthorization);
   const [paymentArrangementId, setPaymentArrangementId] = useState<string>("");
   const [paymentInstrumentId, setPaymentInstrumentId] = useState<string>("");
   const [agreementData, setAgreementData] = useState<AgreementDataProps>();
@@ -64,23 +63,24 @@ function PayTo() {
           agreementDetails: {
             paymentAgreementType: "other_service",
             frequency:
-              requestType === 179050000
+              requestType === 179050000 ||
+              agreementData?.mec_paymentfrequency === 278510004
                 ? "adhoc"
                 : frequencyCodeValue(agreementData?.mec_paymentfrequency || 0),
             establishmentType: "authorised",
             startDate:
               requestType === 179050000
                 ? formatDate(
-                  paymentData?.mec_duedate
-                  ? convertDate(paymentData?.mec_duedate || "")
-                  : "N/A"
-                )
+                    paymentData?.mec_duedate
+                      ? convertDate(paymentData?.mec_duedate || "")
+                      : "N/A"
+                  )
                 : formatDate(
                     agreementData?.mec_firstpromisedate
                       ? convertDate(agreementData?.mec_firstpromisedate || "")
                       : "N/A"
                   ),
-            description: "Payment Arrangement",
+            description: `Payment ${searchParams.get("reference")}`,
             balloonAgreementDetails: {
               lastPaymentDate:
                 requestType === 179050000
@@ -323,6 +323,8 @@ function PayTo() {
           onClick={handleClick}
           isLoading={isLoadingClick}
           agreementData={agreementData}
+          paymentData={paymentData}
+          requestType={requestType}
         />
       );
     default:

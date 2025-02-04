@@ -3,7 +3,7 @@ export const frequencyCodeValue = (value: number) => {
     case 278510002:
       return "Weekly";
     case 278510004:
-      return "One of";
+      return "One Off";
     case 278510000:
       return "Fortnightly";
     case 278510001:
