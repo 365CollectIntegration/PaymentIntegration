@@ -22,7 +22,10 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.log("ERROR: ", error);
     return NextResponse.json(
-      { message: "Something went wrong in getting the token" },
+      {
+        message:
+          "Something went wrong. We seem to be having an issue. Please try again later.",
+      },
       { status: 500 }
     );
   }
