@@ -247,8 +247,11 @@ function PayTo() {
         token,
         reference: searchParams.get("reference"),
       });
+
       setPaymentArrangementId(
-        res.data?.value[0]?._mec_paymentarrangement_value
+        res.data?.value[0]?.mec_requesttype === 179050000
+          ? res.data?.value[0]?._mec_payment_value
+          : res.data?.value[0]?._mec_paymentarrangement_value
       );
       setAgreementData(res.data?.value[0]?.mec_PaymentArrangement);
       setPaymentData(res.data?.value[0]?.mec_Payment);
