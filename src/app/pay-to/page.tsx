@@ -131,7 +131,11 @@ function PayTo() {
     })
       .then((res) => {
         setPaymentInstrumentId(res.data.id);
-        addGPPaymentInstrumentId(token, res.data.id);
+        if (requestType === 179050000) {
+          addGPPaymentId(token, res.data.id);
+        } else {
+          addGPPaymentInstrumentId(token, res.data.id);
+        }
         createWebhook();
       })
       .catch(() => {
@@ -205,6 +209,23 @@ function PayTo() {
       })
       .catch();
   };
+
+  async function addGPPaymentId(token: string | null, gpInstrumentId: string) {
+    try {
+      const res = await axios.post("/api/add-payment-id", {
+        token,
+        paymentArrangementId,
+        gpInstrumentId: gpInstrumentId,
+      });
+      if (res.data === "") {
+        setIsLoading(false);
+        setStep(PayToStep.ForAuthorization);
+        scrollToTop();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   async function addGPPaymentInstrumentId(
     token: string | null,
