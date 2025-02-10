@@ -11,6 +11,7 @@ import { convertDate } from "@/helpers/convertDate";
 import { frequencyCodeValue } from "@/helpers/frequencyCodeValue";
 import { AgreementDataProps, PaymentDataProps } from "@/types/agreements";
 import CustomerDetailsProps from "@/types/customerDetails";
+import { makeid } from "@/helpers/stringGenerator";
 
 function HomePage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ function HomePage() {
   const [paymentData, setPaymentData] = useState<PaymentDataProps>();
   const [customerDetails, setCustomerDetails] =
     useState<CustomerDetailsProps>();
+  const [customerId, setCustomerId] = useState<string>();
   const [contactId, setContactId] = useState<string>();
   const [requestType, setRequestType] = useState<number>();
 
@@ -47,9 +49,43 @@ function HomePage() {
       })
         .then((res) => {
           addGPCustomerUniqueId(accessToken, res.data.id);
+          apiLogging(
+            accessToken || "",
+            customerId || "",
+            `https://sandbox.api.gpaunz.com/customers`,
+            "POST",
+            "200",
+            "OK",
+            {
+              name: customerDetails?.fullname,
+              email: customerDetails?.emailaddress1,
+              reference: customerDetails?.mec_customerreferenceid,
+            },
+            res.data,
+            "OK",
+            "200",
+            "OK"
+          );
         })
         .catch(() => {
           setIsLoading(false);
+          apiLogging(
+            accessToken || "",
+            customerId || "",
+            `https://sandbox.api.gpaunz.com/customers`,
+            "POST",
+            "500",
+            "internal server error",
+            {
+              name: customerDetails?.fullname,
+              email: customerDetails?.emailaddress1,
+              reference: customerDetails?.mec_customerreferenceid,
+            },
+            {},
+            "internal server error",
+            "500",
+            "internal server error"
+          );
         });
     }
   }
@@ -68,18 +104,48 @@ function HomePage() {
         setIsLoading(false);
         router.push(`/pay-to?reference=${searchParams.get("reference")}`);
       }
+      apiLogging(
+        token || "",
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/contacts(${contactId})`,
+        "PATCH",
+        "200",
+        "OK",
+        { gpUniqueId: gpUniqueId },
+        res.data,
+        "OK",
+        "200",
+        "OK"
+      );
     } catch (error) {
       console.error(error);
     }
   }
 
-  async function getCustomerDetails(token: string, contactIdValue: string) {
+  async function getCustomerDetails(
+    token: string,
+    contactIdValue: string,
+    customerId: string
+  ) {
     try {
       const res = await axios.post("/api/customer-details", {
         token,
         contactIdValue,
       });
       setCustomerDetails(res.data?.value[0]);
+      apiLogging(
+        token,
+        customerId,
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/contacts?$filter=contactid eq ${contactIdValue}&$select=emailaddress1,fullname,mec_customerreferenceid,mec_gpcustomeruniqueid`,
+        "GET",
+        "200",
+        "OK",
+        {},
+        res.data,
+        "OK",
+        "200",
+        "OK"
+      );
     } catch (error) {
       console.error(error);
     }
@@ -94,13 +160,30 @@ function HomePage() {
       setAgreementData(res.data?.value[0]?.mec_PaymentArrangement);
       setPaymentData(res.data?.value[0]?.mec_Payment);
       setRequestType(res.data?.value[0]?.mec_requesttype);
+      setCustomerId(res.data?.value[0]?.mec_customerrequestid);
       if (res.data?.value[0]?.mec_RequestedBy?._mec_contact_value) {
         getCustomerDetails(
           token,
-          res.data?.value[0]?.mec_RequestedBy?._mec_contact_value
+          res.data?.value[0]?.mec_RequestedBy?._mec_contact_value,
+          res.data?.value[0]?.mec_customerrequestid
         );
         setContactId(res.data?.value[0]?.mec_RequestedBy?._mec_contact_value);
       }
+      apiLogging(
+        token,
+        res.data?.value[0]?.mec_customerrequestid,
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_customerrequests?$filter=mec_name eq '${searchParams?.get(
+          "reference"
+        )}'&$expand=mec_PaymentArrangement($select=mec_paymentfrequency,mec_promiseamount,mec_numberofpayments,mec_firstpromisedate,mec_lastpromisedate,mec_finalpaymentamount,mec_totalamount,mec_referencenumber,mec_gppaymentinstrumentid), mec_RequestedBy ($select=_mec_contact_value), mec_Payment($select=mec_duedate, mec_referencenumber, mec_amountpaid, mec_gppaymentinstrumentid)`,
+        "GET",
+        "200",
+        "OK",
+        {},
+        res.data,
+        "OK",
+        "200",
+        "OK"
+      );
     } catch (error) {
       console.error(error);
     }
@@ -112,6 +195,40 @@ function HomePage() {
       getAgreementDetails(res.data.token.access_token);
       localStorage.setItem("accessToken", res.data.token.access_token);
       localStorage.setItem("reference", searchParams.get("reference") || "");
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function apiLogging(
+    token: string,
+    mec_customerrequestid: string,
+    apiurl: string,
+    method: string,
+    status_code: string,
+    message?: string,
+    request_body?: object,
+    response_body?: object,
+    response_status?: string,
+    response_code?: string,
+    response_message?: string
+  ) {
+    try {
+      const res = await axios.post("/api/logging", {
+        token,
+        logid: makeid(6),
+        mec_customerrequestid,
+        apiurl,
+        method,
+        status_code,
+        message,
+        request_body,
+        response_body,
+        response_status,
+        response_code,
+        response_message,
+      });
+      console.log(res);
     } catch (error) {
       console.error(error);
     }
