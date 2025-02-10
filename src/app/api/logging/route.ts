@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   try {
     const res = await collectAxios.post(
-      `/api/data/v9.2/mec_apitransactionlog`,
+      `/api/data/v9.2/mec_apitransactionlogs`,
       {        
         mec_apitransactionlogidentifier: body.logid,
         mec_customerrequestid: body.mec_customerrequestid,
