@@ -58,8 +58,8 @@ async function handleTransactions(body: any) {
     });
 
     if (getResponse.data.value.length === 0) {
-      console.log("No record found for the provided paymentInstrumentId");
-      return NextResponse.json({ message: "Record not found" }, { status: 404 });
+        // We need to log this to api that either payment instrument or reference number is invalid.
+        return NextResponse.json({ message: "Transaction did not process." }, { status: 200 });     
     }
 
     // Extract the record ID
