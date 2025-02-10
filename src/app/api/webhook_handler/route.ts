@@ -46,7 +46,7 @@ async function handleTransactions(body: any) {
     };
     
     console.log("Transactions event received:", transaction);
-
+    // We need to fetch the GUID first.
     const getUrl = `/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${transaction.paymentInstrumentId}' and mec_referencenumber eq '${reference}'`;
     const getResponse = await collectAxios.get(getUrl, {
       headers: {
@@ -63,8 +63,9 @@ async function handleTransactions(body: any) {
     }
 
     // Extract the record ID
-    const recordId = getResponse.data.value[0].mec_paymentid;
-  
+    const recordId = getResponse.data.value[0].mec_paymentid;  
+
+    // update the status in d365
     const res = await collectAxios.patch(
         `/api/data/v9.2/mec_payments(${recordId})`,
         {
@@ -80,8 +81,6 @@ async function handleTransactions(body: any) {
         }
       ); 
 
-    // Perform further processing or database updates here
-  
     return NextResponse.json({ message: "Transaction processed successfully" }, { status: 200 });
   }
   
@@ -105,8 +104,7 @@ async function handleTransactions(body: any) {
       payeeMerchantName: payload.paymentAgreement?.payee?.merchantName,
       resultStatus: payload.result?.status,
       resultMode: payload.result?.mode,
-    };
-  
+    }; 
     
 
     console.log("Payment instrument event received:", paymentInstrument);
