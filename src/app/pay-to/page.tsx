@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { v4 as uuid } from "uuid";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+import { makeid } from "@/helpers/stringGenerator";
 
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import { DetailsPage } from "@/components/pay-to/DetailsPage";
@@ -32,6 +33,7 @@ function PayTo() {
     useState<CustomerDetailsProps>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLoadingClick, setIsLoadingClick] = useState<boolean>(false);
+  const [customerId, setCustomerId] = useState<string>();
 
   const formatDate = (date: string) => {
     const [day, month, year] = date.split("/");
@@ -44,6 +46,81 @@ function PayTo() {
   async function handleSubmit(bsb: string, bankAccount: string, name: string) {
     const token = localStorage.getItem("accessToken");
     setIsLoading(true);
+
+    const data = {
+      reference:
+        requestType === 179050000
+          ? paymentData?.mec_referencenumber
+          : agreementData?.mec_referencenumber || "",
+      paymentAgreement: {
+        agreementDetails: {
+          paymentAgreementType: "other_service",
+          frequency:
+            requestType === 179050000 ||
+            agreementData?.mec_paymentfrequency === 278510004
+              ? "adhoc"
+              : frequencyCodeValue(agreementData?.mec_paymentfrequency || 0),
+          establishmentType: "authorised",
+          startDate:
+            requestType === 179050000
+              ? formatDate(
+                  paymentData?.mec_duedate
+                    ? convertDate(paymentData?.mec_duedate || "")
+                    : "N/A"
+                )
+              : formatDate(
+                  agreementData?.mec_firstpromisedate
+                    ? convertDate(agreementData?.mec_firstpromisedate || "")
+                    : "N/A"
+                ),
+          description: `Payment ${searchParams.get("reference")}`,
+          balloonAgreementDetails: {
+            lastPaymentDate:
+              requestType === 179050000
+                ? null
+                : formatDate(
+                    agreementData?.mec_lastpromisedate
+                      ? convertDate(agreementData?.mec_lastpromisedate || "")
+                      : "N/A"
+                  ),
+            amount:
+              requestType === 179050000
+                ? paymentData?.mec_amountpaid
+                  ? Math.round(
+                      parseFloat(`${paymentData?.mec_amountpaid.toFixed(2)}`) *
+                        100
+                    )
+                  : null
+                : agreementData?.mec_promiseamount
+                ? Math.round(
+                    parseFloat(
+                      `${agreementData?.mec_promiseamount.toFixed(2)}`
+                    ) * 100
+                  )
+                : null,
+            lastAmount:
+              requestType === 179050000
+                ? null
+                : agreementData?.mec_finalpaymentamount
+                ? Math.round(
+                    parseFloat(
+                      `${agreementData?.mec_finalpaymentamount.toFixed(2)}`
+                    ) * 100
+                  )
+                : null,
+          },
+        },
+        payer: {
+          name: name,
+          type: "person",
+          account: {
+            bsb: bsb,
+            number: bankAccount,
+          },
+        },
+      },
+    };
+
     axios({
       method: "POST",
       url: `https://sandbox.api.gpaunz.com/customers/${customerDetails?.mec_gpcustomeruniqueid}/PaymentInstruments`,
@@ -54,85 +131,28 @@ function PayTo() {
           "zzOIzbv-AlAbxp8.USNoE128vssg6sH4e6uUtUll1khphUhtdtdM1zaL9Kg",
         "x-idempotency-key": uuid(),
       },
-      data: {
-        reference:
-          requestType === 179050000
-            ? paymentData?.mec_referencenumber
-            : agreementData?.mec_referencenumber || "",
-        paymentAgreement: {
-          agreementDetails: {
-            paymentAgreementType: "other_service",
-            frequency:
-              requestType === 179050000 ||
-              agreementData?.mec_paymentfrequency === 278510004
-                ? "adhoc"
-                : frequencyCodeValue(agreementData?.mec_paymentfrequency || 0),
-            establishmentType: "authorised",
-            startDate:
-              requestType === 179050000
-                ? formatDate(
-                    paymentData?.mec_duedate
-                      ? convertDate(paymentData?.mec_duedate || "")
-                      : "N/A"
-                  )
-                : formatDate(
-                    agreementData?.mec_firstpromisedate
-                      ? convertDate(agreementData?.mec_firstpromisedate || "")
-                      : "N/A"
-                  ),
-            description: `Payment ${searchParams.get("reference")}`,
-            balloonAgreementDetails: {
-              lastPaymentDate:
-                requestType === 179050000
-                  ? null
-                  : formatDate(
-                      agreementData?.mec_lastpromisedate
-                        ? convertDate(agreementData?.mec_lastpromisedate || "")
-                        : "N/A"
-                    ),
-              amount:
-                requestType === 179050000
-                  ? paymentData?.mec_amountpaid
-                    ? Math.round(
-                        parseFloat(
-                          `${paymentData?.mec_amountpaid.toFixed(2)}`
-                        ) * 100
-                      )
-                    : null
-                  : agreementData?.mec_promiseamount
-                  ? Math.round(
-                      parseFloat(
-                        `${agreementData?.mec_promiseamount.toFixed(2)}`
-                      ) * 100
-                    )
-                  : null,
-              lastAmount:
-                requestType === 179050000
-                  ? null
-                  : agreementData?.mec_finalpaymentamount
-                  ? Math.round(
-                      parseFloat(
-                        `${agreementData?.mec_finalpaymentamount.toFixed(2)}`
-                      ) * 100
-                    )
-                  : null,
-            },
-          },
-          payer: {
-            name: name,
-            type: "person",
-            account: {
-              bsb: bsb,
-              number: bankAccount,
-            },
-          },
-        },
-      },
+      data: data,
     })
       .then((res) => {
         setPaymentInstrumentId(res.data.id);
-        addGPPaymentInstrumentId(token, res.data.id);
-        createWebhook();
+        if (requestType === 179050000) {
+          addGPPaymentId(token, res.data.id);
+        } else {
+          addGPPaymentInstrumentId(token, res.data.id);
+        }
+        apiLogging(
+          token || "",
+          customerId || "",
+          `https://sandbox.api.gpaunz.com/customers/${customerDetails?.mec_gpcustomeruniqueid}/PaymentInstruments`,
+          "POST",
+          "200",
+          "OK",
+          data,
+          res.data,
+          "OK",
+          "200",
+          "OK"
+        );
       })
       .catch(() => {
         setIsLoading(false);
@@ -140,6 +160,7 @@ function PayTo() {
   }
 
   async function handleClick() {
+    const token = localStorage.getItem("accessToken");
     setIsLoading(true);
     axios({
       method: "GET",
@@ -164,47 +185,54 @@ function PayTo() {
             `/pay-to/unapproved?reference=${searchParams.get("reference")}`
           );
         }
+        apiLogging(
+          token || "",
+          customerId || "",
+          `https://sandbox.api.gpaunz.com/customers/${customerDetails?.mec_gpcustomeruniqueid}/PaymentInstruments/${paymentInstrumentId}`,
+          "POST",
+          "200",
+          "OK",
+          {},
+          res.data,
+          "OK",
+          "200",
+          "OK"
+        );
       })
       .catch(() => {
         setIsLoadingClick(false);
       });
   }
 
-  const createWebhook = () => {
-    axios({
-      method: "POST",
-      url: `https://mock.globalrapid.io/webhooks`,
-      headers: {
-        Accept: "application/json, text/plain",
-        "Content-Type": "application/json",
-        "x-api-key": "eyJ1c2VyIjogMTIzNCwgImFwaUtleSI6ICJ0ZXN0MTIzNCJ9",
-      },
-      data: {
-        event: "payment_instruments",
-        url: "https://365paymentgateway.azurewebsites.net/pay-to",
-      },
-    })
-      .then((res) => {
-        retrieveWebhook(res.data.id);
-      })
-      .catch();
-  };
-
-  const retrieveWebhook = (id: string) => {
-    axios({
-      method: "GET",
-      url: `https://mock.globalrapid.io/webhooks/${id}`,
-      headers: {
-        Accept: "application/json, text/plain",
-        "Content-Type": "application/json",
-        "x-api-key": "eyJ1c2VyIjogMTIzNCwgImFwaUtleSI6ICJ0ZXN0MTIzNCJ9",
-      },
-    })
-      .then((res) => {
-        console.log("ZXC: ", res.data);
-      })
-      .catch();
-  };
+  async function addGPPaymentId(token: string | null, gpInstrumentId: string) {
+    try {
+      const res = await axios.post("/api/add-payment-id", {
+        token,
+        paymentArrangementId,
+        gpInstrumentId: gpInstrumentId,
+      });
+      if (res.data === "") {
+        setIsLoading(false);
+        setStep(PayToStep.ForAuthorization);
+        scrollToTop();
+      }
+      apiLogging(
+        token || "",
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_payments(${paymentArrangementId})`,
+        "PATCH",
+        "200",
+        "OK",
+        { mec_gppaymentinstrumentid: gpInstrumentId },
+        res.data,
+        "OK",
+        "200",
+        "OK"
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   async function addGPPaymentInstrumentId(
     token: string | null,
@@ -221,6 +249,19 @@ function PayTo() {
         setStep(PayToStep.ForAuthorization);
         scrollToTop();
       }
+      apiLogging(
+        token || "",
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_promisetopaies(${paymentArrangementId})`,
+        "PATCH",
+        "200",
+        "OK",
+        { mec_gppaymentinstrumentid: gpInstrumentId },
+        res.data,
+        "OK",
+        "200",
+        "OK"
+      );
     } catch (error) {
       console.error(error);
     }
@@ -236,6 +277,19 @@ function PayTo() {
         contactIdValue,
       });
       setCustomerDetails(res.data?.value[0]);
+      apiLogging(
+        token || "",
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/contacts?$filter=contactid eq ${contactIdValue}&$select=emailaddress1,fullname,mec_customerreferenceid,mec_gpcustomeruniqueid`,
+        "GET",
+        "200",
+        "OK",
+        {},
+        res.data,
+        "OK",
+        "200",
+        "OK"
+      );
     } catch (error) {
       console.error(error);
     }
@@ -256,12 +310,62 @@ function PayTo() {
       setAgreementData(res.data?.value[0]?.mec_PaymentArrangement);
       setPaymentData(res.data?.value[0]?.mec_Payment);
       setRequestType(res.data?.value[0]?.mec_requesttype);
+      setCustomerId(res.data?.value[0]?.mec_customerrequestid);
       if (res.data?.value[0]?.mec_RequestedBy?._mec_contact_value) {
         getCustomerDetails(
           token,
           res.data?.value[0]?.mec_RequestedBy?._mec_contact_value
         );
       }
+      apiLogging(
+        token || "",
+        res.data?.value[0]?.mec_customerrequestid,
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_customerrequests?$filter=mec_name eq '${searchParams?.get(
+          "reference"
+        )}'&$expand=mec_PaymentArrangement($select=mec_paymentfrequency,mec_promiseamount,mec_numberofpayments,mec_firstpromisedate,mec_lastpromisedate,mec_finalpaymentamount,mec_totalamount,mec_referencenumber,mec_gppaymentinstrumentid), mec_RequestedBy ($select=_mec_contact_value), mec_Payment($select=mec_duedate, mec_referencenumber, mec_amountpaid, mec_gppaymentinstrumentid)`,
+        "GET",
+        "200",
+        "OK",
+        {},
+        res.data,
+        "OK",
+        "200",
+        "OK"
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function apiLogging(
+    token: string,
+    mec_customerrequestid: string,
+    apiurl: string,
+    method: string,
+    status_code: string,
+    message?: string,
+    request_body?: object,
+    response_body?: object,
+    response_status?: string,
+    response_code?: string,
+    response_message?: string
+  ) {
+    try {
+      const res = await axios.post("/api/logging", {
+        token,
+        logid: makeid(6),
+        mec_customerrequestid,
+        apiurl,
+        method,
+        status_code,
+        message,
+        request_body,
+        response_body,
+        response_status,
+        response_code,
+        response_message,
+      });
+      console.log(res);
     } catch (error) {
       console.error(error);
     }
