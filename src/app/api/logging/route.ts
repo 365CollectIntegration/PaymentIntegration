@@ -28,9 +28,8 @@ export async function POST(req: NextRequest) {
         mec_httpstatusmessage: body.message,
         mec_requestbody: JSON.stringify(body.request_body),
         mec_responsebody: JSON.stringify(body.response_body),
-        mec_requesttimestamp: new Date(
-          Date.UTC(2025, 1, 5, 0, 44, 54)
-        ).toISOString(),
+        mec_requesttimestamp: new Date().toISOString(),
+        mec_responsetimestamp: new Date().toISOString(),
         mec_responsestatus: body.response_status,
         mec_responsecode: body.response_code,
         mec_responsemessage: body.response_message,
