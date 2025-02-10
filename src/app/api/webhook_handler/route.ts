@@ -1,6 +1,6 @@
 import { v4 as uuid } from "uuid";
 import { NextResponse, NextRequest } from "next/server";
-import { gpAxios } from "@/utils/apiUtils";
+import { collectAxios } from "@/utils/apiUtils";
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
 
     switch (body.event) {
         case "transactions":
-          return handleTransactions(body);
+          return await handleTransactions(body);
   
         case "payment_instruments":
           return handlePaymentInstruments(body);
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 }
 
 // Function to handle 'transactions' event
-function handleTransactions(body: any) {
+async function handleTransactions(body: any) {
     const { id, payload } = body;
   
     // Extract relevant data from the payload
@@ -43,9 +43,22 @@ function handleTransactions(body: any) {
       paymentInstrumentId: payload.payment?.instrument?.customer?.paymentInstrumentId,
       status: payload.result?.status,
     };
-  
-    console.log("Transaction event received:", transaction);
-  
+
+    const res = await collectAxios.patch(
+        `/api/data/v9.2/mec_payments(${body.paymentArrangementId})`,
+        {
+            mec_paidon: transaction.status,
+        },
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${body.token}`,
+            "OData-Version": "4.0",
+            "OData-MaxVersion": "4.0",
+          },
+        }
+      ); 
+
     // Perform further processing or database updates here
   
     return NextResponse.json({ message: "Transaction processed successfully" }, { status: 200 });
@@ -72,6 +85,8 @@ function handleTransactions(body: any) {
       resultMode: payload.result?.mode,
     };
   
+    
+
     console.log("Payment instrument event received:", paymentInstrument);
   
     // Perform further processing or database updates here
