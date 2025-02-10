@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
 
 // Function to handle 'transactions' event
 async function handleTransactions(body: any) {
+    const reference = body.reference;
     const { id, payload } = body;
   
     // Extract relevant data from the payload
@@ -43,9 +44,10 @@ async function handleTransactions(body: any) {
       paymentInstrumentId: payload.payment?.instrument?.customer?.paymentInstrumentId,
       status: payload.result?.status,
     };
-
+    console.log("Transactions event received:", transaction);
+  
     const res = await collectAxios.patch(
-        `/api/data/v9.2/mec_payments(${body.paymentArrangementId})`,
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${transaction.paymentInstrumentId}'`,
         {
             mec_paidon: transaction.status,
         },
@@ -66,6 +68,7 @@ async function handleTransactions(body: any) {
   
   // Function to handle 'payment_instruments' event
   function handlePaymentInstruments(body: any) {
+    const reference = body.reference;
     const { id, payload } = body;
   
     // Extract relevant data from the payload
