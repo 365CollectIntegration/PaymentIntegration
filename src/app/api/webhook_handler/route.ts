@@ -44,10 +44,29 @@ async function handleTransactions(body: any) {
       paymentInstrumentId: payload.payment?.instrument?.customer?.paymentInstrumentId,
       status: payload.result?.status,
     };
+    
     console.log("Transactions event received:", transaction);
+
+    const getUrl = `/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${transaction.paymentInstrumentId}' and mec_referencenumber eq '${reference}'`;
+    const getResponse = await collectAxios.get(getUrl, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${body.token}`,
+        "OData-Version": "4.0",
+        "OData-MaxVersion": "4.0",
+      },
+    });
+
+    if (getResponse.data.value.length === 0) {
+      console.log("No record found for the provided paymentInstrumentId");
+      return NextResponse.json({ message: "Record not found" }, { status: 404 });
+    }
+
+    // Extract the record ID
+    const recordId = getResponse.data.value[0].mec_paymentid;
   
     const res = await collectAxios.patch(
-        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${transaction.paymentInstrumentId}'`,
+        `/api/data/v9.2/mec_payments(${recordId})`,
         {
             mec_paidon: transaction.status,
         },
