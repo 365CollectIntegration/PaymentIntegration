@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, no-unused-vars, @typescript-eslint/no-unused-vars */
 import { NextResponse, NextRequest } from "next/server";
 import { collectAxios } from "@/utils/apiUtils";
 
@@ -122,7 +123,7 @@ async function handlePaymentInstruments(body: any) {
         return NextResponse.json({ message: "Transaction did not process." }, { status: 200 });
     }
 
-    var recordId = "";
+    let recordId = "";
     if(entityName == "mec_payments") {
         recordId = getResponse.data.value[0].mec_paymentid;
     }
