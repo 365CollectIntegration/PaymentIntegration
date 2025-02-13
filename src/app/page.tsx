@@ -24,6 +24,7 @@ function HomePage() {
   const [customerId, setCustomerId] = useState<string>();
   const [contactId, setContactId] = useState<string>();
   const [requestType, setRequestType] = useState<number>();
+  const [stateToken, setStateToken] = useState<string>();
 
   async function handleClick() {
     const accessToken = localStorage.getItem("accessToken");
@@ -67,24 +68,24 @@ function HomePage() {
             "OK"
           );
         })
-        .catch(() => {
+        .catch((err) => {
           setIsLoading(false);
           apiLogging(
             accessToken || "",
             customerId || "",
             `https://sandbox.api.gpaunz.com/customers`,
             "POST",
-            "500",
-            "internal server error",
+            `${err.response.status}`,
+            err.response.statusText,
             {
               name: customerDetails?.fullname,
               email: customerDetails?.emailaddress1,
               reference: customerDetails?.mec_customerreferenceid,
             },
             {},
-            "internal server error",
-            "500",
-            "internal server error"
+            err.response.statusText,
+            `${err.response.status}`,
+            err.response.statusText
           );
         });
     }
@@ -117,8 +118,21 @@ function HomePage() {
         "200",
         "OK"
       );
-    } catch (error) {
-      console.error(error);
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch (error: any) {
+      apiLogging(
+        token || "",
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/contacts(${contactId})`,
+        "PATCH",
+        `${error.status}`,
+        error.message,
+        { gpUniqueId: gpUniqueId },
+        {},
+        error.message,
+        `${error.status}`,
+        error.message
+      );
     }
   }
 
@@ -146,8 +160,21 @@ function HomePage() {
         "200",
         "OK"
       );
-    } catch (error) {
-      console.error(error);
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch (error: any) {
+      apiLogging(
+        token,
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/contacts?$filter=contactid eq ${contactIdValue}&$select=emailaddress1,fullname,mec_customerreferenceid,mec_gpcustomeruniqueid`,
+        "GET",
+        `${error.status}`,
+        error.message,
+        {},
+        {},
+        error.message,
+        `${error.status}`,
+        error.message
+      );
     }
   }
 
@@ -162,11 +189,6 @@ function HomePage() {
       setRequestType(res.data?.value[0]?.mec_requesttype);
       setCustomerId(res.data?.value[0]?.mec_customerrequestid);
       if (res.data?.value[0]?.mec_RequestedBy?._mec_contact_value) {
-        getCustomerDetails(
-          token,
-          res.data?.value[0]?.mec_RequestedBy?._mec_contact_value,
-          res.data?.value[0]?.mec_customerrequestid
-        );
         setContactId(res.data?.value[0]?.mec_RequestedBy?._mec_contact_value);
       }
       apiLogging(
@@ -184,8 +206,23 @@ function HomePage() {
         "200",
         "OK"
       );
-    } catch (error) {
-      console.error(error);
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch (error: any) {
+      apiLogging(
+        token,
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_customerrequests?$filter=mec_name eq '${searchParams?.get(
+          "reference"
+        )}'&$expand=mec_PaymentArrangement($select=mec_paymentfrequency,mec_promiseamount,mec_numberofpayments,mec_firstpromisedate,mec_lastpromisedate,mec_finalpaymentamount,mec_totalamount,mec_referencenumber,mec_gppaymentinstrumentid), mec_RequestedBy ($select=_mec_contact_value), mec_Payment($select=mec_duedate, mec_referencenumber, mec_amountpaid, mec_gppaymentinstrumentid)`,
+        "GET",
+        `${error.status}`,
+        error.message,
+        {},
+        {},
+        error.message,
+        `${error.status}`,
+        error.message
+      );
     }
   }
 
@@ -193,6 +230,7 @@ function HomePage() {
     try {
       const res = await axios("/api/token");
       getAgreementDetails(res.data.token.access_token);
+      setStateToken(res.data.token.access_token);
       localStorage.setItem("accessToken", res.data.token.access_token);
       localStorage.setItem("reference", searchParams.get("reference") || "");
     } catch (error) {
@@ -233,6 +271,12 @@ function HomePage() {
       console.error(error);
     }
   }
+
+  useEffect(() => {
+    if (contactId && stateToken && customerId) {
+      getCustomerDetails(stateToken || "", contactId, customerId || "");
+    }
+  }, [contactId, customerId, stateToken]);
 
   useEffect(() => {
     getToken();
