@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, no-unused-vars, @typescript-eslint/no-unused-vars */
 import { NextResponse, NextRequest } from "next/server";
 import { collectAxios } from "@/utils/apiUtils";
+import { msAxios } from "@/utils/apiUtils";
 
 export async function POST(req: NextRequest) {
     try {
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
 async function handleTransactions(body: any) {
     const reference = body.reference;
     const { id, payload } = body;
-
+    const token = await GetD365Token();
     // Extract relevant data from the payload
     const transaction = {
         id: payload.id,
@@ -51,7 +52,7 @@ async function handleTransactions(body: any) {
     const getResponse = await collectAxios.get(getUrl, {
         headers: {
             Accept: "application/json",
-            Authorization: `Bearer ${body.token}`,
+            Authorization: `Bearer ${token}`,
             "OData-Version": "4.0",
             "OData-MaxVersion": "4.0",
         },
@@ -74,7 +75,7 @@ async function handleTransactions(body: any) {
         {
             headers: {
                 Accept: "application/json",
-                Authorization: `Bearer ${body.token}`,
+                Authorization: `Bearer ${token}`,
                 "OData-Version": "4.0",
                 "OData-MaxVersion": "4.0",
             },
@@ -88,7 +89,7 @@ async function handleTransactions(body: any) {
 async function handlePaymentInstruments(body: any) {
     const reference = body.reference;
     const { id, payload } = body;
-
+    const token = await GetD365Token();
     // Extract relevant data from the payload
     const paymentInstrument = {
         id: payload.id,
@@ -106,13 +107,15 @@ async function handlePaymentInstruments(body: any) {
         resultStatus: payload.result?.status,
         resultMode: payload.result?.mode,
     };
+
+    
     const entityName = paymentInstrument.agreementType == "adhoc" ? "mec_payments" : "mec_promisetopaies";
     const entityPropertyId = `${entityName}id`;
     const getUrl = `/api/data/v9.2/${entityName}?$filter=mec_gppaymentinstrumentid eq '${paymentInstrument.id}' and mec_referencenumber eq '${paymentInstrument.reference}'`;
     const getResponse = await collectAxios.get(getUrl, {
         headers: {
             Accept: "application/json",
-            Authorization: `Bearer ${body.token}`,
+            Authorization: `Bearer ${token}`,
             "OData-Version": "4.0",
             "OData-MaxVersion": "4.0",
         },
@@ -124,11 +127,11 @@ async function handlePaymentInstruments(body: any) {
     }
 
     let recordId = "";
-    if(entityName == "mec_payments") {
+    if (entityName == "mec_payments") {
         recordId = getResponse.data.value[0].mec_paymentid;
     }
 
-    if(entityName == "mec_promisetopaies") {
+    if (entityName == "mec_promisetopaies") {
         recordId = getResponse.data.value[0].mec_promisetopayid;
     }
 
@@ -143,7 +146,7 @@ async function handlePaymentInstruments(body: any) {
         {
             headers: {
                 Accept: "application/json",
-                Authorization: `Bearer ${body.token}`,
+                Authorization: `Bearer ${token}`,
                 "OData-Version": "4.0",
                 "OData-MaxVersion": "4.0",
             },
@@ -152,3 +155,30 @@ async function handlePaymentInstruments(body: any) {
     return NextResponse.json({ message: "Payment instrument processed successfully" }, { status: 200 });
 }
 
+
+async function GetD365Token() {
+    try {
+        const res = await msAxios.post(
+            `/${process.env.NEXT_PUBLIC_MICROSOFT_ONLINE_TENANT_ID}/oauth2/v2.0/token`,
+            {
+                grant_type: "client_credentials",
+                client_id: process.env.NEXT_PUBLIC_MICROSOFT_ONLINE_CLIENT_ID,
+                client_secret: process.env.NEXT_PUBLIC_MICROSOFT_ONLINE_SECRET_KEY,
+                scope: `${process.env.NEXT_PUBLIC_COLLECT_DEV_CRM6_URL}/.default`,
+            },
+            {
+                headers: {
+                    Accept: "*/*",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+            }
+        );
+        return NextResponse.json({ token: res.data }, { status: 200 });
+    } catch (error) {
+        console.log("ERROR: ", error);
+        return NextResponse.json(
+            { message: "Something went wrong in getting the token" },
+            { status: 500 }
+        );
+    }
+}
