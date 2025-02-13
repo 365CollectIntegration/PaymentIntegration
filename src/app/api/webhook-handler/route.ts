@@ -173,7 +173,8 @@ async function GetD365Token() {
                 },
             }
         );
-        return NextResponse.json({ token: res.data }, { status: 200 });
+
+        return res.data.access_token;       
     } catch (error) {
         console.log("ERROR: ", error);
         return NextResponse.json(
