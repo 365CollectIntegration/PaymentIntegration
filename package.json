@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@microsoft/applicationinsights-web": "^3.3.5",
     "axios": "1.7.9",
     "classnames": "2.5.1",
     "next": "15.1.0",

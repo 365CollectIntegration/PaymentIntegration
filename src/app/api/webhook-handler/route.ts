@@ -2,14 +2,24 @@
 import { NextResponse, NextRequest } from "next/server";
 import { collectAxios } from "@/utils/apiUtils";
 import { msAxios } from "@/utils/apiUtils";
+import appInsights from '@/utils/appInsights';
 
 export async function POST(req: NextRequest) {
     try {
+
+        // Get query params from the URL
+        const { searchParams } = new URL(req.url);      
+        const id = searchParams.get("id");     
+        const event = searchParams.get("event");
+        
         const body = await req.json();
 
-        switch (body.event) {
+        appInsights.trackTrace({ message: `Webhook from Global Payments received with id:${id} and event: ${event}`, properties: { body } });
+
+
+        switch (event) {
             case "transactions":
-                return await handleTransactions(body);
+                return await handleTransactions(req);
 
             case "payment_instruments":
                 return await handlePaymentInstruments(body);
@@ -29,8 +39,11 @@ export async function POST(req: NextRequest) {
 
 // Function to handle 'transactions' event
 async function handleTransactions(body: any) {
+
     const reference = body.reference;
-    const { id, payload } = body;
+
+    const { payload } = body;
+
     const token = await GetD365Token();
     // Extract relevant data from the payload
     const transaction = {
@@ -48,7 +61,7 @@ async function handleTransactions(body: any) {
 
     console.log("Transactions event received:", transaction);
     // We need to fetch the GUID first.
-    const getUrl = `/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${transaction.paymentInstrumentId}' and mec_referencenumber eq '${reference}'`;
+    const getUrl = `/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${transaction.paymentInstrumentId}' and mec_referencenumber eq '${body.reference}'`;
     const getResponse = await collectAxios.get(getUrl, {
         headers: {
             Accept: "application/json",
@@ -60,6 +73,8 @@ async function handleTransactions(body: any) {
 
     if (getResponse.data.value.length === 0) {
         // We need to log this to api that either payment instrument or reference number is invalid.
+        appInsights.trackTrace({ message: "Transaction did not process.", properties: { data: getResponse.data } });
+
         return NextResponse.json({ message: "Transaction did not process." }, { status: 200 });
     }
 
@@ -81,6 +96,8 @@ async function handleTransactions(body: any) {
             },
         }
     );
+
+    appInsights.trackTrace({ message: "Transaction processed successfully.", properties: { data: res.data } });
 
     return NextResponse.json({ message: "Transaction processed successfully" }, { status: 200 });
 }
@@ -108,7 +125,7 @@ async function handlePaymentInstruments(body: any) {
         resultMode: payload.result?.mode,
     };
 
-    
+
     const entityName = paymentInstrument.agreementType == "adhoc" ? "mec_payments" : "mec_promisetopaies";
     const entityPropertyId = `${entityName}id`;
     const getUrl = `/api/data/v9.2/${entityName}?$filter=mec_gppaymentinstrumentid eq '${paymentInstrument.id}' and mec_referencenumber eq '${paymentInstrument.reference}'`;
@@ -174,7 +191,7 @@ async function GetD365Token() {
             }
         );
 
-        return res.data.access_token;       
+        return res.data.access_token;
     } catch (error) {
         console.log("ERROR: ", error);
         return NextResponse.json(
