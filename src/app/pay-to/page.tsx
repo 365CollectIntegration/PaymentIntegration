@@ -154,8 +154,21 @@ function PayTo() {
           "OK"
         );
       })
-      .catch(() => {
+      .catch((err) => {
         setIsLoading(false);
+        apiLogging(
+          token || "",
+          customerId || "",
+          `https://sandbox.api.gpaunz.com/customers/${customerDetails?.mec_gpcustomeruniqueid}/PaymentInstruments`,
+          "POST",
+          `${err.response.status}`,
+          err.response.statusText,
+          data,
+          {},
+          err.response.statusText,
+          `${err.response.status}`,
+          err.response.statusText
+        );
       });
   }
 
@@ -199,8 +212,21 @@ function PayTo() {
           "OK"
         );
       })
-      .catch(() => {
+      .catch((err) => {
         setIsLoadingClick(false);
+        apiLogging(
+          token || "",
+          customerId || "",
+          `https://sandbox.api.gpaunz.com/customers/${customerDetails?.mec_gpcustomeruniqueid}/PaymentInstruments/${paymentInstrumentId}`,
+          "POST",
+          `${err.response.status}`,
+          err.response.statusText,
+          {},
+          {},
+          err.response.statusText,
+          `${err.response.status}`,
+          err.response.statusText
+        );
       });
   }
 
@@ -229,8 +255,21 @@ function PayTo() {
         "200",
         "OK"
       );
-    } catch (error) {
-      console.error(error);
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch (error: any) {
+      apiLogging(
+        token || "",
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_payments(${paymentArrangementId})`,
+        "PATCH",
+        `${error.status}`,
+        error.message,
+        { mec_gppaymentinstrumentid: gpInstrumentId },
+        {},
+        error.message,
+        `${error.status}`,
+        error.message
+      );
     }
   }
 
@@ -262,8 +301,21 @@ function PayTo() {
         "200",
         "OK"
       );
-    } catch (error) {
-      console.error(error);
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch (error: any) {
+      apiLogging(
+        token || "",
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_promisetopaies(${paymentArrangementId})`,
+        "PATCH",
+        `${error.status}`,
+        error.message,
+        { mec_gppaymentinstrumentid: gpInstrumentId },
+        {},
+        error.message,
+        `${error.status}`,
+        error.message
+      );
     }
   }
 
@@ -290,8 +342,21 @@ function PayTo() {
         "200",
         "OK"
       );
-    } catch (error) {
-      console.error(error);
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch (error: any) {
+      apiLogging(
+        token || "",
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/contacts?$filter=contactid eq ${contactIdValue}&$select=emailaddress1,fullname,mec_customerreferenceid,mec_gpcustomeruniqueid`,
+        "GET",
+        `${error.status}`,
+        error.message,
+        {},
+        {},
+        error.message,
+        `${error.status}`,
+        error.message
+      );
     }
   }
 
@@ -332,8 +397,23 @@ function PayTo() {
         "200",
         "OK"
       );
-    } catch (error) {
-      console.error(error);
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch (error: any) {
+      apiLogging(
+        token || "",
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_customerrequests?$filter=mec_name eq '${searchParams?.get(
+          "reference"
+        )}'&$expand=mec_PaymentArrangement($select=mec_paymentfrequency,mec_promiseamount,mec_numberofpayments,mec_firstpromisedate,mec_lastpromisedate,mec_finalpaymentamount,mec_totalamount,mec_referencenumber,mec_gppaymentinstrumentid), mec_RequestedBy ($select=_mec_contact_value), mec_Payment($select=mec_duedate, mec_referencenumber, mec_amountpaid, mec_gppaymentinstrumentid)`,
+        "GET",
+        `${error.status}`,
+        error.message,
+        {},
+        {},
+        error.message,
+        `${error.status}`,
+        error.message
+      );
     }
   }
 
