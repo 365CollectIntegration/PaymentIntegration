@@ -41,9 +41,7 @@ export async function POST(req: NextRequest) {
 async function handleTransactions(body: any) {
 
     const reference = body.reference;
-
-    const { payload } = body;
-
+    const { id, payload } = body;
     const token = await GetD365Token();
     // Extract relevant data from the payload
     const transaction = {
@@ -58,8 +56,6 @@ async function handleTransactions(body: any) {
         paymentInstrumentId: payload.payment?.instrument?.customer?.paymentInstrumentId,
         status: payload.result?.status,
     };
-
-    console.log("Transactions event received:", transaction);
     // We need to fetch the GUID first.
     const getUrl = `/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${transaction.paymentInstrumentId}' and mec_referencenumber eq '${body.reference}'`;
     const getResponse = await collectAxios.get(getUrl, {
