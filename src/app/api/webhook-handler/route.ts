@@ -137,7 +137,7 @@ async function handlePaymentInstruments(body: any) {
 
     // update the status in d365
     const res = await collectAxios.patch(
-        `/api/data/v9.2/mec_payments(${recordId})`,
+        `/api/data/v9.2/${entityName}(${recordId})`,
         // create a dynamic payload base on frequency type
         {
             // Marystela to map the field
