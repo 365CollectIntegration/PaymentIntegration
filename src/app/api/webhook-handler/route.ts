@@ -2,7 +2,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { collectAxios } from "@/utils/apiUtils";
 import { msAxios } from "@/utils/apiUtils";
-import axios from 'axios';
 import appInsights from '@/utils/appInsights';
 import { makeid } from "@/helpers/stringGenerator";
 
@@ -55,19 +54,13 @@ export async function POST(req: NextRequest) {
 
 // Function to handle 'transactions' event
 async function handleTransactions(body: any) {
-    const reference = body.reference;
-    const { id, payload } = body;
-    const token = await GetD365Token();
+    const reference = body.reference || "error";
+    const token = await GetD365Token();   
 
-    // Extract relevant data from the payload
-    const transaction = {
-        id: payload.id,
-        customerId: payload.payment?.instrument?.customer?.id,
-        paymentInstrumentId: payload.payment?.instrument?.customer?.paymentInstrumentId,
-        status: payload.result?.status,
-    };
+    const instrumentId = body.payment?.instrument?.customer?.paymentInstrumentId || "error";
+
     // We need to fetch the GUID first.
-    const getUrl = `/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${transaction.paymentInstrumentId}' and mec_referencenumber eq '${reference}'`;
+    const getUrl = `/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${instrumentId}' and mec_referencenumber eq '${reference}'`;
     const getResponse = await collectAxios.get(getUrl, {
         headers: {
             Accept: "application/json",
@@ -76,6 +69,7 @@ async function handleTransactions(body: any) {
             "OData-MaxVersion": "4.0",
         },
     });
+
 
     if (getResponse.data.value.length === 0) {
         // We need to log this to api that either payment instrument or reference number is invalid.
@@ -91,7 +85,7 @@ async function handleTransactions(body: any) {
     const res = await collectAxios.patch(
         `/api/data/v9.2/mec_payments(${recordId})`,
         {
-            mec_paidon: transaction.status,
+            mec_paidon: body?.result.status,
         },
         {
             headers: {
@@ -133,7 +127,6 @@ async function handlePaymentInstruments(body: any) {
 
 
     const entityName = paymentInstrument.agreementType == "adhoc" ? "mec_payments" : "mec_promisetopaies";
-    const entityPropertyId = `${entityName}id`;
     const getUrl = `/api/data/v9.2/${entityName}?$filter=mec_gppaymentinstrumentid eq '${paymentInstrument.id}' and mec_referencenumber eq '${paymentInstrument.reference}'`;
     const getResponse = await collectAxios.get(getUrl, {
         headers: {
@@ -221,20 +214,44 @@ async function apiLogging(
     response_message?: string
   ) {
     try {
-      const res = await axios.post("/api/logging", {
-        token,
-        logid: makeid(6),
-        mec_customerrequestid,
-        apiurl,
-        method,
-        status_code,
-        message,
-        request_body,
-        response_body,
-        response_status,
-        response_code,
-        response_message,
-      });
+        const httpMethodMap: { [key: string]: number } = {
+            GET: 179050000,
+            POST: 179050001,
+            PATCH: 179050002,
+            PUT: 179050003,
+            DELETE: 179050004,
+            CONNECT: 179050005,
+            TRACE: 179050006,
+            OPTIONS: 179050007,
+            HEAD: 179050008,
+          };
+
+        const res = await collectAxios.post(
+            `/api/data/v9.2/mec_apitransactionlogs`,
+            {
+              mec_apitransactionlogidentifier: token,
+              "mec_CustomerRequestID@odata.bind": `/mec_customerrequests(${mec_customerrequestid})`,
+              mec_apiendpoint: apiurl,
+              mec_httpmethod: httpMethodMap[method.toUpperCase()],
+              mec_httpstatuscode: status_code,
+              mec_httpstatusmessage: message,
+              mec_requestbody: JSON.stringify(request_body),
+              mec_responsebody: JSON.stringify(response_body),
+              mec_requesttimestamp: new Date().toISOString(),
+              mec_responsetimestamp: new Date().toISOString(),
+              mec_responsestatus: response_status,
+              mec_responsecode: response_code,
+              mec_responsemessage: response_message,
+            },
+            {
+              headers: {
+                Accept: "application/json",
+                Authorization: `Bearer ${token}`,
+                "OData-Version": "4.0",
+                "OData-MaxVersion": "4.0",
+              },
+            }
+          );
       console.log(res);
     } catch (error) {
       console.error(error);
