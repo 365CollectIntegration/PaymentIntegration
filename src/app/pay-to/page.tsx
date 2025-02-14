@@ -34,6 +34,7 @@ function PayTo() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLoadingClick, setIsLoadingClick] = useState<boolean>(false);
   const [customerId, setCustomerId] = useState<string>();
+  const [contactId, setContactId] = useState<string>();
 
   const formatDate = (date: string) => {
     const [day, month, year] = date.split("/");
@@ -321,7 +322,8 @@ function PayTo() {
 
   async function getCustomerDetails(
     token: string | null,
-    contactIdValue: string
+    contactIdValue: string,
+    customerId: string
   ) {
     try {
       const res = await axios.post("/api/customer-details", {
@@ -377,11 +379,9 @@ function PayTo() {
       setRequestType(res.data?.value[0]?.mec_requesttype);
       setCustomerId(res.data?.value[0]?.mec_customerrequestid);
       if (res.data?.value[0]?.mec_RequestedBy?._mec_contact_value) {
-        getCustomerDetails(
-          token,
-          res.data?.value[0]?.mec_RequestedBy?._mec_contact_value
-        );
+        setContactId(res.data?.value[0]?.mec_RequestedBy?._mec_contact_value);
       }
+
       apiLogging(
         token || "",
         res.data?.value[0]?.mec_customerrequestid,
@@ -450,6 +450,13 @@ function PayTo() {
       console.error(error);
     }
   }
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (contactId && customerId) {
+      getCustomerDetails(token, contactId, customerId || "");
+    }
+  }, [contactId, customerId]);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
