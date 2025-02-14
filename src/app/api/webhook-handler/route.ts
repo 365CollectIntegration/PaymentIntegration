@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
        
         apiLogging(
             token,
-            '',
+            '889ab469-5ae3-ef11-9341-000d3ae02e72',
             req.url,
             "POST",
             "200",
