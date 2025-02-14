@@ -2,19 +2,35 @@
 import { NextResponse, NextRequest } from "next/server";
 import { collectAxios } from "@/utils/apiUtils";
 import { msAxios } from "@/utils/apiUtils";
+import axios from 'axios';
 import appInsights from '@/utils/appInsights';
+import { makeid } from "@/helpers/stringGenerator";
 
 export async function POST(req: NextRequest) {
     try {
-
+        
         // Get query params from the URL
         const { searchParams } = new URL(req.url);      
         const id = searchParams.get("id");     
         const event = searchParams.get("event");
         
         const body = await req.json();
-
+        
         appInsights.trackTrace({ message: `Webhook from Global Payments received with id:${id} and event: ${event}`, properties: { body } });
+       
+        apiLogging(
+            '',
+            '',
+            req.url,
+            "POST",
+            "200",
+            "OK",
+            body,
+            req,
+            "OK",
+            "200",
+            body.event
+          );
 
 
         switch (event) {
@@ -39,25 +55,19 @@ export async function POST(req: NextRequest) {
 
 // Function to handle 'transactions' event
 async function handleTransactions(body: any) {
-
     const reference = body.reference;
     const { id, payload } = body;
     const token = await GetD365Token();
+
     // Extract relevant data from the payload
     const transaction = {
         id: payload.id,
-        createdDateTime: payload.createdDateTime,
-        updatedDateTime: payload.updatedDateTime,
-        source: payload.category?.source,
-        method: payload.category?.method,
-        amount: payload.payment?.amount,
-        currency: payload.payment?.currencyCode,
         customerId: payload.payment?.instrument?.customer?.id,
         paymentInstrumentId: payload.payment?.instrument?.customer?.paymentInstrumentId,
         status: payload.result?.status,
     };
     // We need to fetch the GUID first.
-    const getUrl = `/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${transaction.paymentInstrumentId}' and mec_referencenumber eq '${body.reference}'`;
+    const getUrl = `/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${transaction.paymentInstrumentId}' and mec_referencenumber eq '${reference}'`;
     const getResponse = await collectAxios.get(getUrl, {
         headers: {
             Accept: "application/json",
@@ -196,3 +206,37 @@ async function GetD365Token() {
         );
     }
 }
+
+async function apiLogging(
+    token: string,
+    mec_customerrequestid: string,
+    apiurl: string,
+    method: string,
+    status_code: string,
+    message?: string,
+    request_body?: object,
+    response_body?: object,
+    response_status?: string,
+    response_code?: string,
+    response_message?: string
+  ) {
+    try {
+      const res = await axios.post("/api/logging", {
+        token,
+        logid: makeid(6),
+        mec_customerrequestid,
+        apiurl,
+        method,
+        status_code,
+        message,
+        request_body,
+        response_body,
+        response_status,
+        response_code,
+        response_message,
+      });
+      console.log(res);
+    } catch (error) {
+      console.error(error);
+    }
+  }
