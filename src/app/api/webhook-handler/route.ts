@@ -20,15 +20,15 @@ export async function POST(req: NextRequest) {
         apiLogging(
             token,
             '889ab469-5ae3-ef11-9341-000d3ae02e72',
-            req.url,
+            '/api/logging',
             "POST",
             "200",
             "OK",
             body,
-            req,
+            body,
             "OK",
             "200",
-            body.event
+            event || ''
           );
 
         switch (event) {
