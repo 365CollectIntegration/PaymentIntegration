@@ -12,13 +12,13 @@ export async function POST(req: NextRequest) {
         const { searchParams } = new URL(req.url);      
         const id = searchParams.get("id");     
         const event = searchParams.get("event");
-        
+        const token = await GetD365Token();   
         const body = await req.json();
         
         appInsights.trackTrace({ message: `Webhook from Global Payments received with id:${id} and event: ${event}`, properties: { body } });
        
         apiLogging(
-            '',
+            token,
             '',
             req.url,
             "POST",
@@ -31,13 +31,12 @@ export async function POST(req: NextRequest) {
             body.event
           );
 
-
         switch (event) {
             case "transactions":
-                return await handleTransactions(req);
+                return await handleTransactions(body, token);
 
             case "payment_instruments":
-                return await handlePaymentInstruments(body);
+                return await handlePaymentInstruments(body, token);
 
             default:
                 return NextResponse.json(
@@ -53,9 +52,9 @@ export async function POST(req: NextRequest) {
 }
 
 // Function to handle 'transactions' event
-async function handleTransactions(body: any) {
+async function handleTransactions(body: any, token: string) {
     const reference = body.reference || "error";
-    const token = await GetD365Token();   
+    
 
     const instrumentId = body.payment?.instrument?.customer?.paymentInstrumentId || "error";
 
@@ -103,10 +102,9 @@ async function handleTransactions(body: any) {
 }
 
 // Function to handle 'payment_instruments' event
-async function handlePaymentInstruments(body: any) {
+async function handlePaymentInstruments(body: any, token: string) {
     const reference = body.reference;
-    const { id, payload } = body;
-    const token = await GetD365Token();
+    const { id, payload } = body;   
     // Extract relevant data from the payload
     const paymentInstrument = {
         id: payload.id,
