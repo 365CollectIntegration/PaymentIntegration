@@ -15,21 +15,7 @@ export async function POST(req: NextRequest) {
         const token = await GetD365Token();
         const body = await req.json();
 
-        appInsights.trackTrace({ message: `Webhook from Global Payments received with id:${id} and event: ${event}`, properties: { body } });
-
-        apiLogging(
-            token,
-            '889ab469-5ae3-ef11-9341-000d3ae02e72',
-            'https://365paymentgateway.azurewebsites.net/api/webhook-handler',
-            "POST",
-            "200",
-            "OK",
-            body,
-            body,
-            "OK",
-            "200",
-            event || ''
-        );
+        appInsights.trackTrace({ message: `Webhook from Global Payments received with id:${id} and event: ${event}`, properties: { body } });        
 
         switch (event) {
             case "transactions":
@@ -53,13 +39,13 @@ export async function POST(req: NextRequest) {
 
 // Function to handle 'transactions' event
 async function handleTransactions(body: any, token: string) {
-    const reference = body.reference || "error";
-
-
-    const instrumentId = body.payment?.instrument?.customer?.paymentInstrumentId || "error";
+    
+    const status = body.payload?.result?.status;
+    const paymentInstrumentId = body.payload?.payment?.instrument?.customer?.paymentInstrumentId;
+    const reference = body.payload?.reference;    
 
     // We need to fetch the GUID first.
-    const getUrl = `/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${instrumentId}' and mec_referencenumber eq '${reference}'`;
+    const getUrl = `/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${paymentInstrumentId}' and mec_referencenumber eq '${reference}'`;
     const getResponse = await collectAxios.get(getUrl, {
         headers: {
             Accept: "application/json",
@@ -84,7 +70,7 @@ async function handleTransactions(body: any, token: string) {
     const res = await collectAxios.patch(
         `/api/data/v9.2/mec_payments(${recordId})`,
         {
-            mec_paidon: body?.result.status,
+            mec_paidon: status,
         },
         {
             headers: {
