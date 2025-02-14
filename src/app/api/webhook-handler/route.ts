@@ -7,20 +7,20 @@ import { makeid } from "@/helpers/stringGenerator";
 
 export async function POST(req: NextRequest) {
     try {
-        
+
         // Get query params from the URL
-        const { searchParams } = new URL(req.url);      
-        const id = searchParams.get("id");     
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get("id");
         const event = searchParams.get("event");
-        const token = await GetD365Token();   
+        const token = await GetD365Token();
         const body = await req.json();
-        
+
         appInsights.trackTrace({ message: `Webhook from Global Payments received with id:${id} and event: ${event}`, properties: { body } });
-       
+
         apiLogging(
             token,
             '889ab469-5ae3-ef11-9341-000d3ae02e72',
-            '/api/logging',
+            'https://365paymentgateway.azurewebsites.net/api/webhook-handler',
             "POST",
             "200",
             "OK",
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
             "OK",
             "200",
             event || ''
-          );
+        );
 
         switch (event) {
             case "transactions":
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
 // Function to handle 'transactions' event
 async function handleTransactions(body: any, token: string) {
     const reference = body.reference || "error";
-    
+
 
     const instrumentId = body.payment?.instrument?.customer?.paymentInstrumentId || "error";
 
@@ -104,7 +104,7 @@ async function handleTransactions(body: any, token: string) {
 // Function to handle 'payment_instruments' event
 async function handlePaymentInstruments(body: any, token: string) {
     const reference = body.reference;
-    const { id, payload } = body;   
+    const { id, payload } = body;
     // Extract relevant data from the payload
     const paymentInstrument = {
         id: payload.id,
@@ -210,7 +210,7 @@ async function apiLogging(
     response_status?: string,
     response_code?: string,
     response_message?: string
-  ) {
+) {
     try {
         const httpMethodMap: { [key: string]: number } = {
             GET: 179050000,
@@ -222,36 +222,36 @@ async function apiLogging(
             TRACE: 179050006,
             OPTIONS: 179050007,
             HEAD: 179050008,
-          };
+        };
 
         const res = await collectAxios.post(
             `/api/data/v9.2/mec_apitransactionlogs`,
             {
-              mec_apitransactionlogidentifier: token,
-              "mec_CustomerRequestID@odata.bind": `/mec_customerrequests(${mec_customerrequestid})`,
-              mec_apiendpoint: apiurl,
-              mec_httpmethod: httpMethodMap[method.toUpperCase()],
-              mec_httpstatuscode: status_code,
-              mec_httpstatusmessage: message,
-              mec_requestbody: JSON.stringify(request_body),
-              mec_responsebody: JSON.stringify(response_body),
-              mec_requesttimestamp: new Date().toISOString(),
-              mec_responsetimestamp: new Date().toISOString(),
-              mec_responsestatus: response_status,
-              mec_responsecode: response_code,
-              mec_responsemessage: response_message,
+                mec_apitransactionlogidentifier: 'Test123',
+                "mec_CustomerRequestID@odata.bind": '/mec_customerrequests(889ab469-5ae3-ef11-9341-000d3ae02e72)',
+                mec_apiendpoint: apiurl,
+                mec_httpmethod: 179050001,
+                mec_httpstatuscode: 'NOTFOUND',
+                mec_httpstatusmessage: 'test',
+                mec_requestbody: JSON.stringify(request_body),
+                mec_responsebody: JSON.stringify(response_body),
+                mec_requesttimestamp: '2025-02-05T00:44:54Z',
+                mec_responsetimestamp: '2025-02-05T00:44:54Z',
+                mec_responsestatus: 'NOTFOUND',
+                mec_responsecode: '404',
+                mec_responsemessage: 'test',
             },
             {
-              headers: {
-                Accept: "application/json",
-                Authorization: `Bearer ${token}`,
-                "OData-Version": "4.0",
-                "OData-MaxVersion": "4.0",
-              },
+                headers: {
+                    Accept: "application/json",
+                    Authorization: `Bearer ${token}`,
+                    "OData-Version": "4.0",
+                    "OData-MaxVersion": "4.0",
+                },
             }
-          );
-      console.log(res);
+        );
+        console.log(res);
     } catch (error) {
-      console.error(error);
+        console.error(error);
     }
-  }
+}
