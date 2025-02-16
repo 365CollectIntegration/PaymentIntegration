@@ -147,7 +147,7 @@ async function handlePaymentInstruments(body: any, token: string) {
         // create a dynamic payload base on frequency type
         {
             // Marystela to map the field
-            mec_paidon: paymentInstrument.agreementStatus,
+            mec_GPAgreementStatus: paymentInstrument.agreementStatus,
         },
         {
             headers: {
@@ -219,19 +219,19 @@ async function apiLogging(
         const res = await collectAxios.post(
             `/api/data/v9.2/mec_apitransactionlogs`,
             {
-                mec_apitransactionlogidentifier: 'Test123',
-                "mec_CustomerRequestID@odata.bind": '/mec_customerrequests(889ab469-5ae3-ef11-9341-000d3ae02e72)',
+                mec_apitransactionlogidentifier: makeid(6),
+                "mec_CustomerRequestID@odata.bind": `/mec_customerrequests(${mec_customerrequestid})`,
                 mec_apiendpoint: apiurl,
-                mec_httpmethod: 179050001,
-                mec_httpstatuscode: 'NOTFOUND',
-                mec_httpstatusmessage: 'test',
+                mec_httpmethod: httpMethodMap[method.toUpperCase()],
+                mec_httpstatuscode: status_code,
+                mec_httpstatusmessage: message,           
                 mec_requestbody: JSON.stringify(request_body),
                 mec_responsebody: JSON.stringify(response_body),
-                mec_requesttimestamp: '2025-02-05T00:44:54Z',
-                mec_responsetimestamp: '2025-02-05T00:44:54Z',
-                mec_responsestatus: 'NOTFOUND',
-                mec_responsecode: '404',
-                mec_responsemessage: 'test',
+                mec_requesttimestamp: new Date().toISOString(),
+                mec_responsetimestamp: new Date().toISOString(),
+                mec_responsestatus: response_status,
+                mec_responsecode: response_code,
+                mec_responsemessage: response_message,
             },
             {
                 headers: {
