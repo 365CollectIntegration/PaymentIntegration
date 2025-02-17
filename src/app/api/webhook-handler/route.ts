@@ -137,9 +137,7 @@ async function handlePaymentInstruments(body: any, token: string) {
 
     if (entityName == "mec_promisetopaies") {
         recordId = getResponse.data.value[0].mec_promisetopayid;
-    }
-
-    
+    }    
 
     // update the status in d365
     const res = await collectAxios.patch(
@@ -147,7 +145,7 @@ async function handlePaymentInstruments(body: any, token: string) {
         // create a dynamic payload base on frequency type
         {
             // Marystela to map the field
-            mec_GPAgreementStatus: paymentInstrument.agreementStatus,
+            mec_gpagreementstatus: paymentInstrument.agreementStatus,
         },
         {
             headers: {
