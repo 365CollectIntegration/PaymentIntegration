@@ -21,7 +21,7 @@ const TO_DO_TEXT = [
 ];
 
 const WHY_AUTHORISE_TEXT = [
-  "Your new membership will not be activated until the agreement is authorised and the first payment has been successfully taken.",
+  "Your new payment plan will not be activated until the agreement is authorised.",
   "PayTo agreements give you visibility and control over all your recurring payments.",
 ];
 
@@ -97,7 +97,7 @@ function AgreementDetails({
     <div className="mx-auto mt-3 w-full md:w-5/12">
       <Alert
         variant={COLOR_VARIANT.INFO}
-        title="IMPORTANT - AUTHORISE YOUR AGREEMENT NOW"
+        title="IMPORTANT – OPEN YOUR BANKING APP TO AUTHORISE YOUR AGREEMENT"
       >
         <CustomList className="pl-3 pt-2 font-normal text-pa-info-text">
           <ListItem>
@@ -106,13 +106,11 @@ function AgreementDetails({
           </ListItem>
           <ListItem>
             Login securely to your internet banking portal or app and navigate
-            your <span className="font-medium">PayTo agreements</span>
+            your Pay To agreements.
           </ListItem>
           <ListItem>
-            {`Review and authorise the pending agreement labelled `}
-            <span className="font-medium">
-              {`"Global Payments on behalf of ${STORE_NAME}"`}
-            </span>
+            {`Review and authorise the pending agreement labelled "Global Payments
+            on behalf of 365 Collect".`}
           </ListItem>
         </CustomList>
       </Alert>

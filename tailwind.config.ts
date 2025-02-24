@@ -13,7 +13,6 @@ export default {
         foreground: "var(--foreground)",
         "pa-primary": "#2563eb",
         "pa-danger": "#dc3545",
-        "pa-base": "#054365",
         "pa-border": "#d1d5db",
         "pa-normal": "#17273a",
         "pa-info-bg": "#f0fafc",
