@@ -11,7 +11,7 @@ import { ForAuthorizationPage } from "@/components/pay-to/ForAuthorizationPage";
 import { AgreementDataProps, PaymentDataProps } from "@/types/agreements";
 import CustomerDetailsProps from "@/types/customerDetails";
 
-function PayTo() {
+function PayToCreated() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const scrollToTop = useScrollToTop();
@@ -270,10 +270,10 @@ function PayTo() {
   );
 }
 
-export default function PaytoPage() {
+export default function PayToCreatedPage() {
   return (
     <Suspense>
-      <PayTo />
+      <PayToCreated />
     </Suspense>
   );
 }

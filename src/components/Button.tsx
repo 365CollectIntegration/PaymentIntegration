@@ -8,7 +8,12 @@ type ButtonProps = {
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   isBlock?: boolean;
   children?: ReactNode;
-  variant?: "button-light" | "button-dark" | "secondary" | "primary";
+  variant?:
+    | "button-light"
+    | "button-dark"
+    | "secondary"
+    | "primary"
+    | "disabled";
   stopPropagation?: boolean;
   isLoading?: boolean;
 };
@@ -45,8 +50,10 @@ export function Button({
           variant === "button-dark" &&
             "bg-pa-button-dark hover:bg-blue-800 focus:ring-blue-300",
           variant === "primary" &&
-            "bg-pa-primary hover:bg-blue-800 focus:ring-blue-300"
+            "bg-pa-primary hover:bg-blue-800 focus:ring-blue-300",
+          variant === "disabled" && "bg-gray-400 cursor-not-allowed"
         )}
+        disabled={variant === "disabled"}
         onClick={handleClick}
       >
         {isLoading ? (

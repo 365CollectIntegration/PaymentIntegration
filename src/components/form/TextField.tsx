@@ -10,6 +10,7 @@ type TextFieldProps<FormT> = {
   // @ts-expect-error - register
   registerOptions?: RegisterOptions<FormT, Path<FormT>>;
   errorMessage?: string;
+  maxLength?: number;
 };
 
 export const TextField = <FormT,>({
@@ -19,11 +20,15 @@ export const TextField = <FormT,>({
   registerOptions,
   placeholder,
   errorMessage,
+  maxLength,
 }: TextFieldProps<FormT>) => {
   return (
     <div className="w-full">
       {label ? (
-        <label htmlFor={id} className="mb-2 block text-sm text-pa-normal">
+        <label
+          htmlFor={id}
+          className="mb-2 block text-base font-semibold text-pa-normal"
+        >
           {label}
         </label>
       ) : null}
@@ -36,6 +41,7 @@ export const TextField = <FormT,>({
           !errorMessage && "focus:border-pa-primary"
         )}
         placeholder={placeholder}
+        maxLength={maxLength}
         {...register(id, registerOptions)}
       />
 

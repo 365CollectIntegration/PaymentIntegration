@@ -68,7 +68,7 @@ export function Field({
       <div
         className={`${
           withoutBorder ? "" : "border-b pb-1"
-        } text-pa-base font-medium`}
+        } text-pa-button-dark font-medium`}
       >
         {!type ? value ?? "N/A" : renderValue()}
       </div>

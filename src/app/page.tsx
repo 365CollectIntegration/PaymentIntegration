@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import Image from "next/image";
 import { v4 as uuid } from "uuid";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+import classNames from "classnames";
 
+import { PayToInfo } from "@/components/pay-to/DetailsPage";
 import { Button } from "@/components/Button";
 import { Field, FieldsContainer, FormTitle } from "@/components/Field";
+import { Loader } from "@/components/Icons";
 import { convertDate } from "@/helpers/convertDate";
 import { frequencyCodeValue } from "@/helpers/frequencyCodeValue";
 import { AgreementDataProps, PaymentDataProps } from "@/types/agreements";
@@ -16,6 +20,7 @@ import { makeid } from "@/helpers/stringGenerator";
 function HomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const [isLoading, setIsLoading] = useState(false);
   const [agreementData, setAgreementData] = useState<AgreementDataProps>();
   const [paymentData, setPaymentData] = useState<PaymentDataProps>();
@@ -23,14 +28,90 @@ function HomePage() {
     useState<CustomerDetailsProps>();
   const [customerId, setCustomerId] = useState<string>();
   const [contactId, setContactId] = useState<string>();
+  const [paymentArrangementId, setPaymentArrangementId] = useState<string>("");
   const [requestType, setRequestType] = useState<number>();
   const [stateToken, setStateToken] = useState<string>();
+  const [selected, setSelected] = useState<string>("");
+  // FORM
+  const [bsb, setBsb] = useState("");
+  const [bsbError, setBsbError] = useState("");
+  // const [maskedBsb, setMaskedBsb] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountNumberError, setAccountNumberError] = useState("");
+  const [accountName, setAccountName] = useState("");
+  const [accountNameError, setAccountNameError] = useState("");
 
-  async function handleClick() {
+  const handleChangeBsb = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (/^\d*$/.test(e.target.value)) {
+      const inputValue = e.target.value;
+      if (inputValue.length < 1) {
+        setBsbError("BSB is required.");
+      } else {
+        setBsbError("");
+        if (inputValue.length < 6) {
+          setBsbError("Invalid BSB. Please enter a valid 6-digit BSB.");
+        } else {
+          setBsbError("");
+        }
+      }
+      setBsb(inputValue);
+      // console.log("inputValue", inputValue);
+      // // Format with a hyphen after 3 characters (xxx-xxx)
+      // let formattedValue =
+      //   inputValue.length > 3
+      //     ? inputValue.slice(0, 3) + "-" + inputValue.slice(3)
+      //     : inputValue;
+
+      // // Mask input with "x" while keeping hyphen
+      // let maskedValue = formattedValue.replace(/[a-zA-Z0-9]/g, "X");
+      // setMaskedBsb(maskedValue); // Store masked value
+    }
+  };
+
+  const handleAccountNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (/^\d*$/.test(e.target.value)) {
+      const inputValue = e.target.value;
+      if (inputValue.length < 1) {
+        setAccountNumberError("Account number is required.");
+      } else {
+        if (inputValue.length < 6) {
+          setAccountNumberError(
+            "Invalid account number. Please enter a number between 6 and 10 digits"
+          );
+        } else {
+          setAccountNumberError("");
+        }
+      }
+      setAccountNumber(inputValue);
+    }
+  };
+
+  const handleAccountName = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (/^[A-Za-z' -]*$/.test(e.target.value)) {
+      const inputValue = e.target.value;
+      if (inputValue.length < 1) {
+        setAccountNameError("Account name is required.");
+      } else {
+        setAccountNameError("");
+      }
+      setAccountName(inputValue);
+    }
+  };
+
+  const formatDate = (date: string) => {
+    const [day, month, year] = date.split("/");
+
+    // Rearrange into yyyy-mm-dd format
+    const formattedDate = `${year}-${month}-${day}`;
+    return formattedDate;
+  };
+
+  // CREATE CUSTOMER
+  async function handleContinue() {
     const accessToken = localStorage.getItem("accessToken");
     setIsLoading(true);
     if (customerDetails?.mec_gpcustomeruniqueid) {
-      router.push(`/pay-to?reference=${searchParams.get("reference")}`);
+      createPaymentInstrument(customerDetails?.mec_gpcustomeruniqueid);
     } else {
       axios({
         method: "POST",
@@ -50,6 +131,7 @@ function HomePage() {
       })
         .then((res) => {
           addGPCustomerUniqueId(accessToken, res.data.id);
+          createPaymentInstrument(res.data.id);
           apiLogging(
             accessToken || "",
             customerId || "",
@@ -69,6 +151,9 @@ function HomePage() {
           );
         })
         .catch((err) => {
+          router.push(
+            `/pay-to/review?reference=${searchParams.get("reference")}`
+          );
           setIsLoading(false);
           apiLogging(
             accessToken || "",
@@ -91,6 +176,142 @@ function HomePage() {
     }
   }
 
+  // CREATE PAYMENT INSTRUMENT
+  async function createPaymentInstrument(gpcustomeruniqueid: string) {
+    const token = localStorage.getItem("accessToken");
+    setIsLoading(true);
+
+    const data = {
+      reference:
+        requestType === 179050000
+          ? paymentData?.mec_referencenumber
+          : agreementData?.mec_referencenumber || "",
+      // reference: "testzxczxczxc",
+      paymentAgreement: {
+        agreementDetails: {
+          paymentAgreementType: "other_service",
+          frequency:
+            requestType === 179050000 ||
+            agreementData?.mec_paymentfrequency === 278510004
+              ? "adhoc"
+              : frequencyCodeValue(agreementData?.mec_paymentfrequency || 0),
+          establishmentType: "authorised",
+          startDate:
+            requestType === 179050000
+              ? formatDate(
+                  paymentData?.mec_duedate
+                    ? convertDate(paymentData?.mec_duedate || "")
+                    : "N/A"
+                )
+              : formatDate(
+                  agreementData?.mec_firstpromisedate
+                    ? convertDate(agreementData?.mec_firstpromisedate || "")
+                    : "N/A"
+                ),
+          // startDate: "2025-03-01",
+          description: `Payment ${searchParams.get("reference")}`,
+          balloonAgreementDetails: {
+            // lastPaymentDate: "2025-03-30",
+            lastPaymentDate:
+              requestType === 179050000
+                ? null
+                : formatDate(
+                    agreementData?.mec_lastpromisedate
+                      ? convertDate(agreementData?.mec_lastpromisedate || "")
+                      : "N/A"
+                  ),
+            amount:
+              requestType === 179050000
+                ? paymentData?.mec_amountpaid
+                  ? Math.round(
+                      parseFloat(`${paymentData?.mec_amountpaid.toFixed(2)}`) *
+                        100
+                    )
+                  : null
+                : agreementData?.mec_promiseamount
+                ? Math.round(
+                    parseFloat(
+                      `${agreementData?.mec_promiseamount.toFixed(2)}`
+                    ) * 100
+                  )
+                : null,
+            lastAmount:
+              requestType === 179050000
+                ? null
+                : agreementData?.mec_finalpaymentamount
+                ? Math.round(
+                    parseFloat(
+                      `${agreementData?.mec_finalpaymentamount.toFixed(2)}`
+                    ) * 100
+                  )
+                : null,
+          },
+        },
+        payer: {
+          name: accountName,
+          type: "person",
+          account: {
+            bsb: bsb,
+            number: accountNumber,
+          },
+        },
+      },
+    };
+
+    axios({
+      method: "POST",
+      url: `https://sandbox.api.gpaunz.com/customers/${gpcustomeruniqueid}/PaymentInstruments`,
+      headers: {
+        Accept: "application/json, text/plain",
+        "Content-Type": "application/json",
+        "x-api-key":
+          "zzOIzbv-AlAbxp8.USNoE128vssg6sH4e6uUtUll1khphUhtdtdM1zaL9Kg",
+        "x-idempotency-key": uuid(),
+      },
+      data: data,
+    })
+      .then((res) => {
+        localStorage.setItem("paymentInstrumentId", res.data.id);
+        if (requestType === 179050000) {
+          addGPPaymentId(token, res.data.id);
+        } else {
+          addGPPaymentInstrumentId(token, res.data.id);
+        }
+        apiLogging(
+          token || "",
+          customerId || "",
+          `https://sandbox.api.gpaunz.com/customers/${gpcustomeruniqueid}/PaymentInstruments`,
+          "POST",
+          "200",
+          "OK",
+          data,
+          res.data,
+          "OK",
+          "200",
+          "OK"
+        );
+      })
+      .catch((err) => {
+        router.push(
+          `/pay-to/review?reference=${searchParams.get("reference")}`
+        );
+        setIsLoading(false);
+        apiLogging(
+          token || "",
+          customerId || "",
+          `https://sandbox.api.gpaunz.com/customers/${gpcustomeruniqueid}/PaymentInstruments`,
+          "POST",
+          `${err.response.status}`,
+          err.response.statusText,
+          data,
+          {},
+          err.response.statusText,
+          `${err.response.status}`,
+          err.response.statusText
+        );
+      });
+  }
+
   async function addGPCustomerUniqueId(
     token: string | null,
     gpUniqueId: string
@@ -101,10 +322,6 @@ function HomePage() {
         contactId,
         gpUniqueId: gpUniqueId,
       });
-      if (res.data === "") {
-        setIsLoading(false);
-        router.push(`/pay-to?reference=${searchParams.get("reference")}`);
-      }
       apiLogging(
         token || "",
         customerId || "",
@@ -128,6 +345,97 @@ function HomePage() {
         `${error.status}`,
         error.message,
         { gpUniqueId: gpUniqueId },
+        {},
+        error.message,
+        `${error.status}`,
+        error.message
+      );
+    }
+  }
+
+  async function addGPPaymentInstrumentId(
+    token: string | null,
+    gpInstrumentId: string
+  ) {
+    try {
+      const res = await axios.post("/api/add-payment-instrument-id", {
+        token,
+        paymentArrangementId,
+        gpInstrumentId: gpInstrumentId,
+      });
+      if (res.data === "") {
+        setIsLoading(false);
+        router.push(
+          `/pay-to/created?reference=${searchParams.get("reference")}`
+        );
+      }
+      apiLogging(
+        token || "",
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_promisetopaies(${paymentArrangementId})`,
+        "PATCH",
+        "200",
+        "OK",
+        { mec_gppaymentinstrumentid: gpInstrumentId },
+        res.data,
+        "OK",
+        "200",
+        "OK"
+      );
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch (error: any) {
+      apiLogging(
+        token || "",
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_promisetopaies(${paymentArrangementId})`,
+        "PATCH",
+        `${error.status}`,
+        error.message,
+        { mec_gppaymentinstrumentid: gpInstrumentId },
+        {},
+        error.message,
+        `${error.status}`,
+        error.message
+      );
+    }
+  }
+
+  async function addGPPaymentId(token: string | null, gpInstrumentId: string) {
+    try {
+      const res = await axios.post("/api/add-payment-id", {
+        token,
+        paymentArrangementId,
+        gpInstrumentId: gpInstrumentId,
+      });
+      if (res.data === "") {
+        setIsLoading(false);
+        router.push(
+          `/pay-to/created?reference=${searchParams.get("reference")}`
+        );
+      }
+      apiLogging(
+        token || "",
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_payments(${paymentArrangementId})`,
+        "PATCH",
+        "200",
+        "OK",
+        { mec_gppaymentinstrumentid: gpInstrumentId },
+        res.data,
+        "OK",
+        "200",
+        "OK"
+      );
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch (error: any) {
+      apiLogging(
+        token || "",
+        customerId || "",
+        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_payments(${paymentArrangementId})`,
+        "PATCH",
+        `${error.status}`,
+        error.message,
+        { mec_gppaymentinstrumentid: gpInstrumentId },
         {},
         error.message,
         `${error.status}`,
@@ -188,9 +496,16 @@ function HomePage() {
       setPaymentData(res.data?.value[0]?.mec_Payment);
       setRequestType(res.data?.value[0]?.mec_requesttype);
       setCustomerId(res.data?.value[0]?.mec_customerrequestid);
+      setPaymentArrangementId(
+        res.data?.value[0]?.mec_requesttype === 179050000
+          ? res.data?.value[0]?._mec_payment_value
+          : res.data?.value[0]?._mec_paymentarrangement_value
+      );
+
       if (res.data?.value[0]?.mec_RequestedBy?._mec_contact_value) {
         setContactId(res.data?.value[0]?.mec_RequestedBy?._mec_contact_value);
       }
+
       apiLogging(
         token,
         res.data?.value[0]?.mec_customerrequestid,
@@ -370,61 +685,221 @@ function HomePage() {
             )}
           </>
         ) : (
-          <>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="5em"
-              height="5em"
-              viewBox="0 0 24 24"
-              className="mx-auto my-20"
-            >
-              <path
-                fill="none"
-                stroke="#054365"
-                strokeDasharray="16"
-                strokeDashoffset="16"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 3c4.97 0 9 4.03 9 9"
-              >
-                <animate
-                  fill="freeze"
-                  attributeName="stroke-dashoffset"
-                  dur="0.2s"
-                  values="16;0"
-                />
-                <animateTransform
-                  attributeName="transform"
-                  dur="1.5s"
-                  repeatCount="indefinite"
-                  type="rotate"
-                  values="0 12 12;360 12 12"
-                />
-              </path>
-            </svg>
-          </>
+          <Loader />
         )}
       </div>
-      <div className="md:5/12 mx-auto w-full rounded-xl border border-gray-100 bg-pa-background-box p-4 shadow-md md:w-5/12">
-        <FormTitle text="Select your payment method" />
+      <div className="mx-auto w-full rounded-xl border border-gray-100 bg-pa-background-box p-4 shadow-md md:w-5/12 space-y-4">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setSelected("payto")}
+          className="flex flex-row mx-auto w-full rounded-2xl border border-gray-100 p-4 shadow-md bg-white"
+        >
+          <div className="w-1/12 mr-2">
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              data-prefix="fas"
+              data-icon="circle"
+              className="svg-inline--fa fa-circle border-2 h-5 w-5 rounded-full p-0.5 border-pa-button-dark mx-auto mt-1"
+              role="img"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 512 512"
+            >
+              {selected === "payto" && (
+                <path
+                  fill="#054365"
+                  d="M512 256C512 397.4 397.4 512 256 512C114.6 512 0 397.4 0 256C0 114.6 114.6 0 256 0C397.4 0 512 114.6 512 256z"
+                />
+              )}
+            </svg>
+          </div>
+          <div className="w-11/12">
+            <div className="flex justify-between">
+              <div className="text-xl font-bold">PayTo</div>
+              <Image
+                src="/images/pay-to-logo.png"
+                alt="pay-to logo"
+                width={60}
+                height={90}
+              />
+            </div>
+            <div className="text-base text-gray-500 mt-1 w-3/4">
+              Immediate, easy and secure payment from your bank account.
+            </div>
+            {selected === "payto" && (
+              <div className="flex flex-col justify-center pb-2">
+                <div className="flex flex-col">
+                  <div className="mx-auto mt-3 w-full">
+                    <div className="mb-2 space-y-2">
+                      <div className="w-full">
+                        <label
+                          htmlFor="accountNumber"
+                          className="mb-2 block text-base font-semibold text-pa-normal"
+                        >
+                          Account Name
+                        </label>
+                        <input
+                          type="text"
+                          autoComplete="off"
+                          placeholder=""
+                          id="accountName"
+                          className={classNames(
+                            "ease w-full rounded-md border border-pa-border bg-transparent px-3 py-2 text-sm text-pa-normal shadow-sm transition duration-300 placeholder:text-slate-400 focus:shadow focus:outline-none",
+                            accountNameError && "focus:border-pa-primary"
+                          )}
+                          maxLength={50}
+                          value={accountName}
+                          onChange={handleAccountName}
+                          onBlur={handleAccountName}
+                        />
+                        {accountNameError ? (
+                          <p className="text-pa-danger text-xs mt-1">
+                            {accountNameError}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="flex flex-row pt-2">
+                        <div className="w-4/12 mr-3">
+                          <div className="w-full">
+                            <label
+                              htmlFor="bsb"
+                              className="mb-2 block text-base font-semibold text-pa-normal"
+                            >
+                              BSB
+                            </label>
 
-        <div className="px-8">
+                            <input
+                              type="password"
+                              autoComplete="off"
+                              placeholder=""
+                              id="bsb"
+                              className={classNames(
+                                "ease w-full rounded-md border border-pa-border bg-transparent px-3 py-2 text-sm text-pa-normal shadow-sm transition duration-300 placeholder:text-slate-400 focus:shadow focus:outline-none",
+                                bsbError && "focus:border-pa-primary"
+                              )}
+                              maxLength={6}
+                              value={bsb}
+                              onChange={handleChangeBsb}
+                              onBlur={handleChangeBsb}
+                            />
+                            {bsbError ? (
+                              <p className="text-pa-danger text-xs mt-1">
+                                {bsbError}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="w-8/12">
+                          <div className="w-full">
+                            <label
+                              htmlFor="accountNumber"
+                              className="mb-2 block text-base font-semibold text-pa-normal"
+                            >
+                              Account Number
+                            </label>
+
+                            <input
+                              type="text"
+                              autoComplete="off"
+                              placeholder=""
+                              id="accountNumber"
+                              className={classNames(
+                                "ease w-full rounded-md border border-pa-border bg-transparent px-3 py-2 text-sm text-pa-normal shadow-sm transition duration-300 placeholder:text-slate-400 focus:shadow focus:outline-none",
+                                accountNumberError && "focus:border-pa-primary"
+                              )}
+                              maxLength={10}
+                              value={accountNumber}
+                              onChange={handleAccountNumber}
+                              onBlur={handleAccountNumber}
+                            />
+                            {accountNumberError ? (
+                              <p className="text-pa-danger text-xs mt-1">
+                                {accountNumberError}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <PayToInfo />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setSelected("card")}
+          className="flex flex-row mx-auto w-full rounded-2xl border border-gray-100 p-4 shadow-md bg-white"
+        >
+          <div className="flex w-1/12 mr-2">
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              data-prefix="fas"
+              data-icon="circle"
+              className="svg-inline--fa fa-circle border-2 h-5 w-5 rounded-full p-0.5 border-pa-button-dark m-auto"
+              role="img"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 512 512"
+            >
+              {selected === "card" && (
+                <path
+                  fill="#054365"
+                  d="M512 256C512 397.4 397.4 512 256 512C114.6 512 0 397.4 0 256C0 114.6 114.6 0 256 0C397.4 0 512 114.6 512 256z"
+                />
+              )}
+            </svg>
+          </div>
+          <div className="w-11/12">
+            <div className="flex justify-between">
+              <div className="text-xl font-bold my-auto">Credit or Debit</div>
+              <div className="flex flex-row space-x-2">
+                <div className="flex border border-gray-50 rounded-md p-1">
+                  <Image
+                    src="/images/visa.png"
+                    alt="visa"
+                    className="m-auto"
+                    width={50}
+                    height={100}
+                  />
+                </div>
+                <div className="flex border border-gray-50 rounded-md p-1 h-10">
+                  <Image
+                    src="/images/mastercard.png"
+                    alt="mastercard"
+                    width={50}
+                    height={100}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {bsb === "" ||
+        accountName === "" ||
+        accountNumber === "" ||
+        accountNumber.length < 6 ||
+        bsb.length < 6 ? (
           <Button
-            label="Bank Account"
-            containerClassName="mt-4 w-full md:w-1/2 mx-auto"
+            label="Continue"
+            containerClassName="pt-2 w-full md:w-1/2 mx-auto"
+            variant="disabled"
+          />
+        ) : (
+          <Button
+            label="Continue"
+            containerClassName="pt-2 w-full md:w-1/2 mx-auto"
             variant="button-dark"
             isLoading={isLoading}
-            onClick={handleClick}
+            onClick={handleContinue}
           />
-          <Button
-            label="Credit Card"
-            containerClassName="mt-2 w-full md:w-1/2 mx-auto"
-            variant="button-light"
-            onClick={() => {
-              router.push("/credit-card");
-            }}
-          />
+        )}
+        <div className="text-sm px-10 pb-5 text-justify">
+          {`By clicking "Continue" I confirm I have read and accept the terms and conditions associated with submitting this application online. By submitting this form for processing I request and authorise Global Payments, T/A Ezidebit on behalf of 365 Collect, to debit my/our nominated bank account through an established PayTo agreement. If available, the PayTo agreement is not finalised until the agreement is authorised inside my internet banking. I/We must pay you when the bill is due under the arrangement between us.`}
         </div>
       </div>
     </div>
