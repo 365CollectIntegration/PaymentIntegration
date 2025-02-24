@@ -182,11 +182,11 @@ function HomePage() {
     setIsLoading(true);
 
     const data = {
-      // reference:
-      //   requestType === 179050000
-      //     ? paymentData?.mec_referencenumber
-      //     : agreementData?.mec_referencenumber || "",
-      reference: "testzxczxczxc",
+      reference:
+        requestType === 179050000
+          ? paymentData?.mec_referencenumber
+          : agreementData?.mec_referencenumber || "",
+      // reference: "testzxczxczxc",
       paymentAgreement: {
         agreementDetails: {
           paymentAgreementType: "other_service",
@@ -196,30 +196,30 @@ function HomePage() {
               ? "adhoc"
               : frequencyCodeValue(agreementData?.mec_paymentfrequency || 0),
           establishmentType: "authorised",
-          // startDate:
-          //   requestType === 179050000
-          //     ? formatDate(
-          //         paymentData?.mec_duedate
-          //           ? convertDate(paymentData?.mec_duedate || "")
-          //           : "N/A"
-          //       )
-          //     : formatDate(
-          //         agreementData?.mec_firstpromisedate
-          //           ? convertDate(agreementData?.mec_firstpromisedate || "")
-          //           : "N/A"
-          //       ),
-          startDate: "2025-03-01",
+          startDate:
+            requestType === 179050000
+              ? formatDate(
+                  paymentData?.mec_duedate
+                    ? convertDate(paymentData?.mec_duedate || "")
+                    : "N/A"
+                )
+              : formatDate(
+                  agreementData?.mec_firstpromisedate
+                    ? convertDate(agreementData?.mec_firstpromisedate || "")
+                    : "N/A"
+                ),
+          // startDate: "2025-03-01",
           description: `Payment ${searchParams.get("reference")}`,
           balloonAgreementDetails: {
-            lastPaymentDate: "2025-03-30",
-            // lastPaymentDate:
-            //   requestType === 179050000
-            //     ? null
-            //     : formatDate(
-            //         agreementData?.mec_lastpromisedate
-            //           ? convertDate(agreementData?.mec_lastpromisedate || "")
-            //           : "N/A"
-            //       ),
+            // lastPaymentDate: "2025-03-30",
+            lastPaymentDate:
+              requestType === 179050000
+                ? null
+                : formatDate(
+                    agreementData?.mec_lastpromisedate
+                      ? convertDate(agreementData?.mec_lastpromisedate || "")
+                      : "N/A"
+                  ),
             amount:
               requestType === 179050000
                 ? paymentData?.mec_amountpaid
