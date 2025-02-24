@@ -43,7 +43,7 @@ async function handleTransactions(body: any, token: string) {
     const status = body.payload?.result?.status;
     const paymentInstrumentId = body.payload?.payment?.instrument?.customer?.paymentInstrumentId;
     const reference = body.payload?.reference;    
-    const updatedDateTime = body.payload?.updatedDateTime;
+    
     // We need to fetch the GUID first.
     const getUrl = `/api/data/v9.2/mec_payments?$filter=mec_gppaymentinstrumentid eq '${paymentInstrumentId}' and mec_referencenumber eq '${reference}'`;
     const getResponse = await collectAxios.get(getUrl, {
@@ -74,7 +74,7 @@ async function handleTransactions(body: any, token: string) {
     const res = await collectAxios.patch(
         `/api/data/v9.2/mec_payments(${recordId})`,
         {
-            mec_paidon: updatedDateTime || new Date().toISOString(),
+            mec_gpagreementstatus: status
         },
         {
             headers: {
