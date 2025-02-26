@@ -56,7 +56,7 @@ function HomePage() {
       value = `${value.slice(0, 3)}-${value.slice(3, 6)}`;
     }
 
-    setBsb(value);    
+    setBsb(value);
   };
 
   const handleAccountNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -242,7 +242,7 @@ function HomePage() {
           name: accountName,
           type: "person",
           account: {
-            bsb: bsb,
+            bsb: bsb.replace(/-/g, ""),
             number: accountNumber,
           },
         },
@@ -313,34 +313,9 @@ function HomePage() {
         contactId,
         gpUniqueId: gpUniqueId,
       });
-      apiLogging(
-        token || "",
-        customerId || "",
-        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/contacts(${contactId})`,
-        "PATCH",
-        "200",
-        "OK",
-        { gpUniqueId: gpUniqueId },
-        res.data,
-        "OK",
-        "200",
-        "OK"
-      );
       /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch (error: any) {
-      apiLogging(
-        token || "",
-        customerId || "",
-        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/contacts(${contactId})`,
-        "PATCH",
-        `${error.status}`,
-        error.message,
-        { gpUniqueId: gpUniqueId },
-        {},
-        error.message,
-        `${error.status}`,
-        error.message
-      );
+      console.error(error);
     }
   }
 
@@ -360,34 +335,9 @@ function HomePage() {
           `/pay-to/created?reference=${searchParams.get("reference")}`
         );
       }
-      apiLogging(
-        token || "",
-        customerId || "",
-        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_promisetopaies(${paymentArrangementId})`,
-        "PATCH",
-        "200",
-        "OK",
-        { mec_gppaymentinstrumentid: gpInstrumentId },
-        res.data,
-        "OK",
-        "200",
-        "OK"
-      );
       /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch (error: any) {
-      apiLogging(
-        token || "",
-        customerId || "",
-        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_promisetopaies(${paymentArrangementId})`,
-        "PATCH",
-        `${error.status}`,
-        error.message,
-        { mec_gppaymentinstrumentid: gpInstrumentId },
-        {},
-        error.message,
-        `${error.status}`,
-        error.message
-      );
+      console.log(error);
     }
   }
 
@@ -403,35 +353,10 @@ function HomePage() {
         router.push(
           `/pay-to/created?reference=${searchParams.get("reference")}`
         );
-      }
-      apiLogging(
-        token || "",
-        customerId || "",
-        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_payments(${paymentArrangementId})`,
-        "PATCH",
-        "200",
-        "OK",
-        { mec_gppaymentinstrumentid: gpInstrumentId },
-        res.data,
-        "OK",
-        "200",
-        "OK"
-      );
+      }      
       /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch (error: any) {
-      apiLogging(
-        token || "",
-        customerId || "",
-        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_payments(${paymentArrangementId})`,
-        "PATCH",
-        `${error.status}`,
-        error.message,
-        { mec_gppaymentinstrumentid: gpInstrumentId },
-        {},
-        error.message,
-        `${error.status}`,
-        error.message
-      );
+      console.log(error);
     }
   }
 
@@ -445,35 +370,10 @@ function HomePage() {
         token,
         contactIdValue,
       });
-      setCustomerDetails(res.data?.value[0]);
-      apiLogging(
-        token,
-        customerId,
-        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/contacts?$filter=contactid eq ${contactIdValue}&$select=emailaddress1,fullname,mec_customerreferenceid,mec_gpcustomeruniqueid`,
-        "GET",
-        "200",
-        "OK",
-        {},
-        res.data,
-        "OK",
-        "200",
-        "OK"
-      );
+      setCustomerDetails(res.data?.value[0]);     
       /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch (error: any) {
-      apiLogging(
-        token,
-        customerId || "",
-        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/contacts?$filter=contactid eq ${contactIdValue}&$select=emailaddress1,fullname,mec_customerreferenceid,mec_gpcustomeruniqueid`,
-        "GET",
-        `${error.status}`,
-        error.message,
-        {},
-        {},
-        error.message,
-        `${error.status}`,
-        error.message
-      );
+      console.error(error);
     }
   }
 
@@ -484,9 +384,9 @@ function HomePage() {
         reference: searchParams.get("reference"),
       });
       // display error if the request is inactive
-      if(res.data?.value[0].statecode == 1) {
+      if (res.data?.value[0].statecode == 1) {
         router.push(
-          `/pay-to/review?reference=${searchParams.get("reference")}&type=1`
+          `/pay-to/inactive/`
         );
       }
 
@@ -503,39 +403,9 @@ function HomePage() {
       if (res.data?.value[0]?.mec_RequestedBy?._mec_contact_value) {
         setContactId(res.data?.value[0]?.mec_RequestedBy?._mec_contact_value);
       }
-
-      apiLogging(
-        token,
-        res.data?.value[0]?.mec_customerrequestid,
-        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_customerrequests?$filter=mec_name eq '${searchParams?.get(
-          "reference"
-        )}'&$expand=mec_PaymentArrangement($select=mec_paymentfrequency,mec_promiseamount,mec_numberofpayments,mec_firstpromisedate,mec_lastpromisedate,mec_finalpaymentamount,mec_totalamount,mec_referencenumber,mec_gppaymentinstrumentid), mec_RequestedBy ($select=_mec_contact_value), mec_Payment($select=mec_duedate, mec_referencenumber, mec_amountpaid, mec_gppaymentinstrumentid)`,
-        "GET",
-        "200",
-        "OK",
-        {},
-        res.data,
-        "OK",
-        "200",
-        "OK"
-      );
       /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch (error: any) {
-      apiLogging(
-        token,
-        customerId || "",
-        `https://collect-dev.crm6.dynamics.com/api/data/v9.2/mec_customerrequests?$filter=mec_name eq '${searchParams?.get(
-          "reference"
-        )}'&$expand=mec_PaymentArrangement($select=mec_paymentfrequency,mec_promiseamount,mec_numberofpayments,mec_firstpromisedate,mec_lastpromisedate,mec_finalpaymentamount,mec_totalamount,mec_referencenumber,mec_gppaymentinstrumentid), mec_RequestedBy ($select=_mec_contact_value), mec_Payment($select=mec_duedate, mec_referencenumber, mec_amountpaid, mec_gppaymentinstrumentid)`,
-        "GET",
-        `${error.status}`,
-        error.message,
-        {},
-        {},
-        error.message,
-        `${error.status}`,
-        error.message
-      );
+      console.error(error);
     }
   }
 
