@@ -1,11 +1,8 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 
 function PayToInactive() {  
-  const searchParams = useSearchParams();
-
   return (
     <div className="mx-auto mt-3 w-full md:w-5/12">
       <div className="my-5 rounded-xl border border-gray-100 p-4 shadow-md md:p-10 text-center">

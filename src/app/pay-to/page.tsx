@@ -86,8 +86,7 @@ function PayTo() {
 
   async function getCustomerDetails(
     token: string | null,
-    contactIdValue: string,
-    customerId: string
+    contactIdValue: string
   ) {
     try {
       const res = await axios.post("/api/customer-details", {
@@ -159,7 +158,7 @@ function PayTo() {
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (contactId && customerId) {
-      getCustomerDetails(token, contactId, customerId || "");
+      getCustomerDetails(token, contactId);
     }
   }, [contactId, customerId]);
 
