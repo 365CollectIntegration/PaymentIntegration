@@ -61,9 +61,9 @@ function PayToCreated() {
           "OK",
           {},
           res.data,
-          "OK",
-          "200",
-          "OK"
+          "ok",
+          "",
+          ""
         );
       })
       .catch((err) => {
@@ -77,9 +77,9 @@ function PayToCreated() {
           err.response.statusText,
           {},
           {},
-          err.response.statusText,
-          `${err.response.status}`,
-          err.response.statusText
+          `${err.response.data.result.status}`,
+          `${err.response.data.result.codes[0].id}`,
+          `${err.response.data.result.codes[0].message}`
         );
       });
   }

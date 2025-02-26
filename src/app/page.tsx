@@ -43,7 +43,6 @@ function HomePage() {
   const [accountNameError, setAccountNameError] = useState("");
 
   const handleChangeBsb = (e: React.ChangeEvent<HTMLInputElement>) => {
-
     let value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
 
     // Ensure input doesn't exceed 6 digits
@@ -143,15 +142,16 @@ function HomePage() {
               reference: customerDetails?.mec_customerreferenceid,
             },
             res.data,
-            "OK",
-            "200",
-            "OK"
+            "ok",
+            "",
+            ""
           );
         })
         .catch((err) => {
           router.push(
             `/pay-to/review?reference=${searchParams.get("reference")}`
           );
+          console.log("ZXc: ", err.response);
           setIsLoading(false);
           apiLogging(
             accessToken || "",
@@ -166,9 +166,9 @@ function HomePage() {
               reference: customerDetails?.mec_customerreferenceid,
             },
             {},
-            err.response.statusText,
-            `${err.response.status}`,
-            err.response.statusText
+            `${err.response.data.result.status}`,
+            `${err.response.data.result.codes[0].id}`,
+            `${err.response.data.result.codes[0].message}`
           );
         });
     }
@@ -190,22 +190,22 @@ function HomePage() {
           paymentAgreementType: "other_service",
           frequency:
             requestType === 179050000 ||
-              agreementData?.mec_paymentfrequency === 278510004
+            agreementData?.mec_paymentfrequency === 278510004
               ? "adhoc"
               : frequencyCodeValue(agreementData?.mec_paymentfrequency || 0),
           establishmentType: "authorised",
           startDate:
             requestType === 179050000
               ? formatDate(
-                paymentData?.mec_duedate
-                  ? convertDate(paymentData?.mec_duedate || "")
-                  : "N/A"
-              )
+                  paymentData?.mec_duedate
+                    ? convertDate(paymentData?.mec_duedate || "")
+                    : "N/A"
+                )
               : formatDate(
-                agreementData?.mec_firstpromisedate
-                  ? convertDate(agreementData?.mec_firstpromisedate || "")
-                  : "N/A"
-              ),
+                  agreementData?.mec_firstpromisedate
+                    ? convertDate(agreementData?.mec_firstpromisedate || "")
+                    : "N/A"
+                ),
           // startDate: "2025-03-01",
           description: `Payment ${searchParams.get("reference")}`,
           balloonAgreementDetails: {
@@ -214,35 +214,35 @@ function HomePage() {
               requestType === 179050000
                 ? null
                 : formatDate(
-                  agreementData?.mec_lastpromisedate
-                    ? convertDate(agreementData?.mec_lastpromisedate || "")
-                    : "N/A"
-                ),
+                    agreementData?.mec_lastpromisedate
+                      ? convertDate(agreementData?.mec_lastpromisedate || "")
+                      : "N/A"
+                  ),
             amount:
               requestType === 179050000
                 ? paymentData?.mec_amountpaid
                   ? Math.round(
-                    parseFloat(`${paymentData?.mec_amountpaid.toFixed(2)}`) *
-                    100
-                  )
+                      parseFloat(`${paymentData?.mec_amountpaid.toFixed(2)}`) *
+                        100
+                    )
                   : null
                 : agreementData?.mec_promiseamount
-                  ? Math.round(
+                ? Math.round(
                     parseFloat(
                       `${agreementData?.mec_promiseamount.toFixed(2)}`
                     ) * 100
                   )
-                  : null,
+                : null,
             lastAmount:
               requestType === 179050000
                 ? null
                 : agreementData?.mec_finalpaymentamount
-                  ? Math.round(
+                ? Math.round(
                     parseFloat(
                       `${agreementData?.mec_finalpaymentamount.toFixed(2)}`
                     ) * 100
                   )
-                  : null,
+                : null,
           },
         },
         payer: {
@@ -284,9 +284,9 @@ function HomePage() {
           "OK",
           data,
           res.data,
-          "OK",
-          "200",
-          "OK"
+          "ok",
+          "",
+          ""
         );
       })
       .catch((err) => {
@@ -303,9 +303,9 @@ function HomePage() {
           err.response.statusText,
           data,
           {},
-          err.response.statusText,
-          `${err.response.status}`,
-          err.response.statusText
+          `${err.response.data.result.status}`,
+          `${err.response.data.result.codes[0].id}`,
+          `${err.response.data.result.codes[0].message}`
         );
       });
   }
@@ -360,7 +360,7 @@ function HomePage() {
         router.push(
           `/pay-to/created?reference=${searchParams.get("reference")}`
         );
-      }      
+      }
       /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch (error: any) {
       console.log(error);
@@ -377,7 +377,7 @@ function HomePage() {
         token,
         contactIdValue,
       });
-      setCustomerDetails(res.data?.value[0]);     
+      setCustomerDetails(res.data?.value[0]);
       /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch (error: any) {
       console.error(error);
@@ -392,11 +392,8 @@ function HomePage() {
       });
       // display error if the request is inactive
       if (res.data?.value[0].statecode == 1) {
-        router.push(
-          `/pay-to/inactive/`
-        );
+        router.push(`/pay-to/inactive/`);
       }
-
       setAgreementData(res.data?.value[0]?.mec_PaymentArrangement);
       setPaymentData(res.data?.value[0]?.mec_Payment);
       setRequestType(res.data?.value[0]?.mec_requesttype);
@@ -755,10 +752,10 @@ function HomePage() {
           </div>
         </div>
         {bsb === "" ||
-          accountName === "" ||
-          accountNumber === "" ||
-          accountNumber.length < 6 ||
-          bsb.length < 7 ? (
+        accountName === "" ||
+        accountNumber === "" ||
+        accountNumber.length < 6 ||
+        bsb.length < 7 ? (
           <Button
             label="Continue"
             containerClassName="pt-2 w-full md:w-1/2 mx-auto"

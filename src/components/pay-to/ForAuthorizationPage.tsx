@@ -66,10 +66,13 @@ function Info() {
       />
       <div className="my-3 flex flex-col gap-3">
         <Accordion title="What has happened?">
-          <div className="pl-5">
-            {`We've created a PayTo agreement that will appear in your internet
-            banking as your account is already enabled for PayTo.`}
-          </div>
+          <List
+            items={[
+              `We've created a PayTo agreement that will appear in your internet
+            banking as your account is already enabled for PayTo.`,
+            ]}
+            className={styles.toDoList}
+          />
         </Accordion>
         <Accordion title="What do I do now?">
           <List items={TO_DO_TEXT} className={styles.toDoList} />
