@@ -242,7 +242,7 @@ function HomePage() {
           name: accountName,
           type: "person",
           account: {
-            bsb: bsb,
+            bsb: bsb.replace(/-/g, ""),
             number: accountNumber,
           },
         },
