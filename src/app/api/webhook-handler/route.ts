@@ -74,7 +74,7 @@ async function handleTransactions(body: any, token: string) {
     const res = await collectAxios.patch(
         `/api/data/v9.2/mec_payments(${recordId})`,
         {
-            mec_gpagreementstatus: status
+            mec_gptransactionstatus: status
         },
         {
             headers: {

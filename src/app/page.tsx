@@ -42,30 +42,20 @@ function HomePage() {
   const [accountNameError, setAccountNameError] = useState("");
 
   const handleChangeBsb = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (/^\d*$/.test(e.target.value)) {
-      const inputValue = e.target.value;
-      if (inputValue.length < 1) {
-        setBsbError("BSB is required.");
-      } else {
-        setBsbError("");
-        if (inputValue.length < 6) {
-          setBsbError("Invalid BSB. Please enter a valid 6-digit BSB.");
-        } else {
-          setBsbError("");
-        }
-      }
-      setBsb(inputValue);
-      // console.log("inputValue", inputValue);
-      // // Format with a hyphen after 3 characters (xxx-xxx)
-      // let formattedValue =
-      //   inputValue.length > 3
-      //     ? inputValue.slice(0, 3) + "-" + inputValue.slice(3)
-      //     : inputValue;
 
-      // // Mask input with "x" while keeping hyphen
-      // let maskedValue = formattedValue.replace(/[a-zA-Z0-9]/g, "X");
-      // setMaskedBsb(maskedValue); // Store masked value
+    let value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+
+    // Ensure input doesn't exceed 6 digits
+    if (value.length > 6) {
+      value = value.slice(0, 6);
     }
+
+    // Auto-format into xxx-xxx
+    if (value.length >= 3) {
+      value = `${value.slice(0, 3)}-${value.slice(3, 6)}`;
+    }
+
+    setBsb(value);    
   };
 
   const handleAccountNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +77,7 @@ function HomePage() {
   };
 
   const handleAccountName = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (/^[A-Za-z' -]*$/.test(e.target.value)) {
+    if (/^[A-Za-z0-9' -]*$/.test(e.target.value)) {
       const inputValue = e.target.value;
       if (inputValue.length < 1) {
         setAccountNameError("Account name is required.");
@@ -192,22 +182,22 @@ function HomePage() {
           paymentAgreementType: "other_service",
           frequency:
             requestType === 179050000 ||
-            agreementData?.mec_paymentfrequency === 278510004
+              agreementData?.mec_paymentfrequency === 278510004
               ? "adhoc"
               : frequencyCodeValue(agreementData?.mec_paymentfrequency || 0),
           establishmentType: "authorised",
           startDate:
             requestType === 179050000
               ? formatDate(
-                  paymentData?.mec_duedate
-                    ? convertDate(paymentData?.mec_duedate || "")
-                    : "N/A"
-                )
+                paymentData?.mec_duedate
+                  ? convertDate(paymentData?.mec_duedate || "")
+                  : "N/A"
+              )
               : formatDate(
-                  agreementData?.mec_firstpromisedate
-                    ? convertDate(agreementData?.mec_firstpromisedate || "")
-                    : "N/A"
-                ),
+                agreementData?.mec_firstpromisedate
+                  ? convertDate(agreementData?.mec_firstpromisedate || "")
+                  : "N/A"
+              ),
           // startDate: "2025-03-01",
           description: `Payment ${searchParams.get("reference")}`,
           balloonAgreementDetails: {
@@ -216,35 +206,35 @@ function HomePage() {
               requestType === 179050000
                 ? null
                 : formatDate(
-                    agreementData?.mec_lastpromisedate
-                      ? convertDate(agreementData?.mec_lastpromisedate || "")
-                      : "N/A"
-                  ),
+                  agreementData?.mec_lastpromisedate
+                    ? convertDate(agreementData?.mec_lastpromisedate || "")
+                    : "N/A"
+                ),
             amount:
               requestType === 179050000
                 ? paymentData?.mec_amountpaid
                   ? Math.round(
-                      parseFloat(`${paymentData?.mec_amountpaid.toFixed(2)}`) *
-                        100
-                    )
+                    parseFloat(`${paymentData?.mec_amountpaid.toFixed(2)}`) *
+                    100
+                  )
                   : null
                 : agreementData?.mec_promiseamount
-                ? Math.round(
+                  ? Math.round(
                     parseFloat(
                       `${agreementData?.mec_promiseamount.toFixed(2)}`
                     ) * 100
                   )
-                : null,
+                  : null,
             lastAmount:
               requestType === 179050000
                 ? null
                 : agreementData?.mec_finalpaymentamount
-                ? Math.round(
+                  ? Math.round(
                     parseFloat(
                       `${agreementData?.mec_finalpaymentamount.toFixed(2)}`
                     ) * 100
                   )
-                : null,
+                  : null,
           },
         },
         payer: {
@@ -770,7 +760,7 @@ function HomePage() {
                             </label>
 
                             <input
-                              type="password"
+                              type="text"
                               autoComplete="off"
                               placeholder=""
                               id="bsb"
@@ -778,7 +768,7 @@ function HomePage() {
                                 "ease w-full rounded-md border border-pa-border bg-transparent px-3 py-2 text-sm text-pa-normal shadow-sm transition duration-300 placeholder:text-slate-400 focus:shadow focus:outline-none",
                                 bsbError && "focus:border-pa-primary"
                               )}
-                              maxLength={6}
+                              maxLength={7}
                               value={bsb}
                               onChange={handleChangeBsb}
                               onBlur={handleChangeBsb}
@@ -880,10 +870,10 @@ function HomePage() {
           </div>
         </div>
         {bsb === "" ||
-        accountName === "" ||
-        accountNumber === "" ||
-        accountNumber.length < 6 ||
-        bsb.length < 6 ? (
+          accountName === "" ||
+          accountNumber === "" ||
+          accountNumber.length < 6 ||
+          bsb.length < 7 ? (
           <Button
             label="Continue"
             containerClassName="pt-2 w-full md:w-1/2 mx-auto"
