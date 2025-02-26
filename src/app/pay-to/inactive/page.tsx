@@ -1,12 +1,9 @@
 "use client";
 
 import { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
-import { Button } from "@/components/Button";
-
-function PayToReview() {
-  const router = useRouter();
+function PayToInactive() {  
   const searchParams = useSearchParams();
 
   return (
@@ -58,25 +55,17 @@ function PayToReview() {
           Something went wrong with your request.
         </div>
         <div className="text-gray-500 mb-3">
-          Please check your payment details and try again. If the issue persists, contact support.
-        </div>
-        <Button
-          label="Retry"
-          containerClassName="pt-2 w-full md:w-1/2 mx-auto"
-          variant="button-light"
-          onClick={() => {
-            router.push(`/?reference=${searchParams.get("reference")}`);
-          }}
-        />
+        This payment request has expired. If you need help, please contact our support team.
+        </div>       
       </div>
     </div>
   );
 }
 
-export default function PayToReviewPage() {
+export default function PayToInactivePage() {
   return (
     <Suspense>
-      <PayToReview />
+      <PayToInactive />
     </Suspense>
   );
 }

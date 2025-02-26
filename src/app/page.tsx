@@ -486,7 +486,7 @@ function HomePage() {
       // display error if the request is inactive
       if(res.data?.value[0].statecode == 1) {
         router.push(
-          `/pay-to/review?reference=${searchParams.get("reference")}&type=1`
+          `/pay-to/inactive/`
         );
       }
 
