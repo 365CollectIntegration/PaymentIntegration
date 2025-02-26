@@ -61,9 +61,9 @@ function PayTo() {
           "OK",
           {},
           res.data,
-          "OK",
-          "200",
-          "OK"
+          "ok",
+          "",
+          ""
         );
       })
       .catch((err) => {
@@ -77,9 +77,9 @@ function PayTo() {
           err.response.statusText,
           {},
           {},
-          err.response.statusText,
-          `${err.response.status}`,
-          err.response.statusText
+          `${err.response.data.result.status}`,
+          `${err.response.data.result.codes[0].id}`,
+          `${err.response.data.result.codes[0].message}`
         );
       });
   }
@@ -93,7 +93,7 @@ function PayTo() {
         token,
         contactIdValue,
       });
-      setCustomerDetails(res.data?.value[0]);      
+      setCustomerDetails(res.data?.value[0]);
       /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch (error: any) {
       console.error(error);
@@ -114,7 +114,7 @@ function PayTo() {
       if (res.data?.value[0]?.mec_RequestedBy?._mec_contact_value) {
         setContactId(res.data?.value[0]?.mec_RequestedBy?._mec_contact_value);
       }
-      
+
       /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch (error: any) {
       console.error(error);
