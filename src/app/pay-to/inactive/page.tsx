@@ -31,8 +31,8 @@ function PayToInactive() {
                 y2="14.525"
                 gradientUnits="userSpaceOnUse"
               >
-                <stop stop-color="#ffcd0f" />
-                <stop offset="1" stop-color="#fe8401" />
+                <stop stopColor="#ffcd0f" />
+                <stop offset="1" stopColor="#fe8401" />
               </linearGradient>
               <linearGradient
                 id="fluentColorWarning161"
@@ -42,8 +42,8 @@ function PayToInactive() {
                 y2="11.575"
                 gradientUnits="userSpaceOnUse"
               >
-                <stop stop-color="#4a4a4a" />
-                <stop offset="1" stop-color="#212121" />
+                <stop stopColor="#4a4a4a" />
+                <stop offset="1" stopColor="#212121" />
               </linearGradient>
             </defs>
           </g>
