@@ -51,6 +51,13 @@ function HomePage() {
       value = value.slice(0, 6);
     }
 
+    if(value.length < 6) {
+      setBsbError("Invalid BSB. Please enter a valid 6-digit BSB.");
+    }
+    else {
+      setBsbError("");
+    }
+
     // Auto-format into xxx-xxx
     if (value.length >= 3) {
       value = `${value.slice(0, 3)}-${value.slice(3, 6)}`;
