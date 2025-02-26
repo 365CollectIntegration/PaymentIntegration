@@ -8,6 +8,12 @@ import { Button } from "@/components/Button";
 function PayToReview() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const type = searchParams.get("type");
+  const body = [
+    "Please check your payment details and try again. If the issue persists, contact support.",
+    "This payment request has expired. If you need help, please contact our support team."
+  ];
+
 
   return (
     <div className="mx-auto mt-3 w-full md:w-5/12">
@@ -58,17 +64,19 @@ function PayToReview() {
           Something went wrong with your request.
         </div>
         <div className="text-gray-500 mb-3">
-          Please check your payment details and try again. If the issue
-          persists, contact support.
+          {type === "1" ? body[1] : body[0]}
         </div>
-        <Button
-          label="Retry"
-          containerClassName="pt-2 w-full md:w-1/2 mx-auto"
-          variant="button-light"
-          onClick={() => {
-            router.push(`/?reference=${searchParams.get("reference")}`);
-          }}
-        />
+        {type !== "1" && (
+          <Button
+            label="Retry"
+            containerClassName="pt-2 w-full md:w-1/2 mx-auto"
+            variant="button-light"
+            onClick={() => {
+              router.push(`/?reference=${searchParams.get("reference")}`);
+            }}
+          />
+        )}
+
       </div>
     </div>
   );

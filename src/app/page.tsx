@@ -483,6 +483,13 @@ function HomePage() {
         token,
         reference: searchParams.get("reference"),
       });
+      // display error if the request is inactive
+      if(res.data?.value[0].statecode == 1) {
+        router.push(
+          `/pay-to/review?reference=${searchParams.get("reference")}&type=1`
+        );
+      }
+
       setAgreementData(res.data?.value[0]?.mec_PaymentArrangement);
       setPaymentData(res.data?.value[0]?.mec_Payment);
       setRequestType(res.data?.value[0]?.mec_requesttype);
