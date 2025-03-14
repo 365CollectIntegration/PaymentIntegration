@@ -52,5 +52,5 @@ jobs:
       with:
         app-name: '365PaymentGateway'  # Replace with your Azure App Service name       
         publish-profile: ${{ secrets.PublishProfileTest }}  # Add your publish profile to GitHub Secrets
-        slot-name: 'poc'
+        slot-name: 'test'
         package: ./app.zip  # Path to the deployment package
